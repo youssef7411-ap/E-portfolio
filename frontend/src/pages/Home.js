@@ -226,6 +226,8 @@ function Home({ darkMode, setDarkMode }) {
               <motion.div
                 className="subjects-grid"
                 variants={containerVariants}
+                initial={prefersReducedMotion ? false : 'hidden'}
+                animate={prefersReducedMotion ? undefined : 'visible'}
               >
                 {subjects.map((subject, index) => (
                   <SubjectCard
@@ -244,4 +246,3 @@ function Home({ darkMode, setDarkMode }) {
 }
 
 export default Home;
-
