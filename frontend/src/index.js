@@ -17,6 +17,12 @@ function Root() {
     }
   }, []);
 
+  useEffect(() => {
+    const theme = darkMode ? 'dark' : 'light';
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  }, [darkMode]);
+
   if (!mounted) {
     return <div className="fixed inset-0 flex items-center justify-center"><div className="spinner w-12 h-12" /></div>;
   }
@@ -26,4 +32,3 @@ function Root() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<Root />);
-
