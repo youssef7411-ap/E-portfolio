@@ -1,0 +1,35 @@
+{
+  "name": "e-portfolio",
+  "version": "1.0.0",
+  "description": "Professional e-portfolio website",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "npm run build && npm --prefix backend start",
+    "run": "npm run dev",
+    "stop": "./stop",
+    "restart": "./restart",
+    "dev": "concurrently \"npm --prefix frontend start\" \"npm --prefix backend run dev\"",
+    "client": "npm --prefix frontend start",
+    "server": "npm --prefix backend start",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend test",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  },
+  "keywords": [
+    "portfolio",
+    "education"
+  ],
+  "author": "Youssef",
+  "license": "PRIVATE",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "dompurify": "^3.3.3",
+    "framer-motion": "^12.38.0",
+    "react-quill": "^2.0.0"
+  }
+}

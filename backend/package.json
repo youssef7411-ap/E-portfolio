@@ -1,0 +1,39 @@
+{
+  "name": "e-portfolio-server",
+  "version": "1.0.0",
+  "description": "E-Portfolio Backend API",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:sync": "node scripts/sync-posts-subjects.mjs",
+    "db:backup": "node scripts/backup-posts-subjects.mjs",
+    "db:restore": "node scripts/restore-posts-subjects.mjs",
+    "db:verify": "node scripts/verify-posts-subjects.mjs"
+  },
+  "keywords": [
+    "portfolio",
+    "api"
+  ],
+  "author": "Youssef",
+  "license": "PRIVATE",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^11.0.1",
+    "mongoose": "^7.0.0",
+    "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

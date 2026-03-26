@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+./stop || true
+sleep 1
+./run

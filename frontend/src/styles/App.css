@@ -1,0 +1,224 @@
+.App {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ── Boot / loading screen ─────────────────────────────── */
+.app-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(75, 130, 220, 0.18), transparent 34%),
+    radial-gradient(circle at 84% 24%, rgba(255, 214, 94, 0.12), transparent 34%),
+    linear-gradient(135deg, #0f1834 0%, #162a4d 54%, #101b35 100%);
+  animation: bootFadeIn 0.28s ease-out both;
+}
+
+.app-boot.boot-out {
+  animation: bootFadeOut 0.4s ease-in forwards;
+}
+
+.boot-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Signature pen animation container */
+.signature-pen {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* "Portfolio" subtitle below the pen animation */
+.boot-signature-gold {
+  font-family: 'Bungee', sans-serif;
+  font-size: clamp(90px, 22vw, 160px);
+  font-weight: 900;
+  background: linear-gradient(45deg, #ffe79e 0%, #f3cf5d 45%, #ffbf38 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 0 #FFD700;
+  filter: drop-shadow(0 0 10px rgba(243, 207, 93, 0.35));
+  letter-spacing: 0;
+  line-height: 0.85;
+  margin: 0 0 0.3em 0;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  animation: signatureSharpZoom 1.2s cubic-bezier(0.25, 0.1, 0.25, 1.2) 0.5s both;
+}
+
+.portfolio-shimmer {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(18px, 3vw, 28px);
+  font-weight: 300;
+  color: #dce2f0;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.boot-curated {
+  font-family: var(--font-main);
+  font-size: clamp(0.72rem, 1.35vw, 0.9rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(243, 207, 93, 0.88);
+}
+
+.boot-preload-status {
+  margin-top: 4px;
+  font-family: var(--font-main);
+  font-size: clamp(0.68rem, 1.2vw, 0.82rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(216, 224, 240, 0.82);
+}
+
+/* Thin progress line at the bottom */
+.boot-progress {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(
+    90deg,
+    var(--accent-boot, rgba(255, 255, 255, 0.8)) 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: bootProgress 3.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s forwards;
+  border-radius: 0 999px 999px 0;
+  box-shadow: 0 0 16px rgba(243, 207, 93, 0.4);
+}
+
+/* ── Boot Phase-specific Styles ─────────────────────────────── */
+
+/* Zoom-in phase - subtle entrance */
+.boot-phase-zoom-in .boot-content {
+  animation: preBootZoom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Keyframes ─────────────────────────────── */
+
+@keyframes bootFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bootFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes preBootZoom {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes signatureSharpZoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bootProgress {
+  0% {
+    width: 0;
+    opacity: 1;
+  }
+  85% {
+    width: 100%;
+    opacity: 1;
+  }
+  100% {
+    width: 100%;
+    opacity: 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .boot-content {
+    gap: 12px;
+  }
+
+  .boot-tagline {
+    letter-spacing: 0.32em;
+  }
+}
+
+@media (max-width: 480px) {
+  .boot-content {
+    gap: 8px;
+  }
+
+  .boot-tagline {
+    font-size: clamp(0.6rem, 2.2vw, 0.75rem);
+    letter-spacing: 0.28em;
+  }
+}
+
+/* Accessibility: Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .app-boot {
+    animation: none;
+  }
+
+  .app-boot.boot-out {
+    animation: none;
+    opacity: 0;
+  }
+
+  .boot-content {
+    animation: none;
+  }
+
+  .boot-tagline {
+    animation: none;
+    opacity: 1;
+  }
+
+  .boot-progress {
+    animation: none;
+    width: 100%;
+    opacity: 0;
+  }
+}
+

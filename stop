@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Simple script to stop the e-portfolio website processes
+# Usage: ./stop
+
+echo "🛑 Stopping e-portfolio website..."
+
+# Kill processes on port 3000 (frontend)
+FRONTEND_PID=$(lsof -t -i:3000)
+if [ -n "$FRONTEND_PID" ]; then
+  echo "Killing frontend process (Port 3000)..."
+  kill -9 $FRONTEND_PID 2>/dev/null
+else
+  echo "No process found on Port 3000."
+fi
+
+# Kill processes on port 5002 (backend)
+BACKEND_PID=$(lsof -t -i:5002)
+if [ -n "$BACKEND_PID" ]; then
+  echo "Killing backend process (Port 5002)..."
+  kill -9 $BACKEND_PID 2>/dev/null
+else
+  echo "No process found on Port 5002."
+fi
+
+echo "✅ Website stopped successfully."

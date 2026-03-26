@@ -1,0 +1,13 @@
+/* ─── Subject Management ────────────────────────────────────── */
+/* Most layout styles come from Admin.css — only component-specific overrides */
+
+.sm-name-cell { display: flex; align-items: center; gap: 10px; }
+.sm-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.sm-desc-cell { color: var(--text-2); max-width: 260px; }

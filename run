@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Simple script to start the e-portfolio website locally
+# Usage: ./run
+
+echo "🚀 Starting e-portfolio website..."
+
+# Ensure dependencies are installed in both frontend and backend
+if [ ! -d "node_modules" ] || [ ! -d "frontend/node_modules" ] || [ ! -d "backend/node_modules" ]; then
+  echo "📦 Installing dependencies first..."
+  npm install
+  npm --prefix frontend install
+  npm --prefix backend install
+fi
+
+# Run both frontend and backend concurrently
+npm run dev
