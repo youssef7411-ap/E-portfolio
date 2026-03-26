@@ -196,22 +196,29 @@ router.patch('/:id/publish', authenticate, async (req, res) => {
 // Delete post (protected)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
-    const exists = await Post.findById(req.params.id).select('_id');
-    if (!exists) return res.status(404).json({ message: 'Post not found' });
+    const exists = await Post.findById(req.params.id).select('_id title subject_id');
+    if (!exists) {
+      console.log(JSON.stringify({ at: new Date().toISOString(), event: 'post_delete', actor: req.admin?.username || '', postId: req.params.id, result: 'not_found' }));
+      return res.status(404).json({ message: 'Post not found' });
+    }
 
     const deleted = await Post.deleteOne({ _id: req.params.id });
     if (!deleted.deletedCount) {
+      console.log(JSON.stringify({ at: new Date().toISOString(), event: 'post_delete', actor: req.admin?.username || '', postId: req.params.id, result: 'failed' }));
       return res.status(500).json({ message: 'Failed to delete post' });
     }
 
     // Fire-and-forget: clean up any uploads no longer referenced
     cleanupOrphanedUploads();
 
+    console.log(JSON.stringify({ at: new Date().toISOString(), event: 'post_delete', actor: req.admin?.username || '', postId: req.params.id, title: exists.title || '', subjectId: String(exists.subject_id || ''), result: 'deleted' }));
     res.json({ message: 'Post deleted permanently', deletedPostId: req.params.id });
   } catch (error) {
     if (error?.name === 'CastError') {
+      console.log(JSON.stringify({ at: new Date().toISOString(), event: 'post_delete', actor: req.admin?.username || '', postId: req.params.id, result: 'invalid_id' }));
       return res.status(400).json({ message: 'Invalid post id' });
     }
+    console.log(JSON.stringify({ at: new Date().toISOString(), event: 'post_delete', actor: req.admin?.username || '', postId: req.params.id, result: 'error', message: String(error?.message || error) }));
     res.status(500).json({ message: 'Failed to delete post' });
   }
 });

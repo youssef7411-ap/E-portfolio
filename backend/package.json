@@ -10,7 +10,8 @@
     "db:sync": "node scripts/sync-posts-subjects.mjs",
     "db:backup": "node scripts/backup-posts-subjects.mjs",
     "db:restore": "node scripts/restore-posts-subjects.mjs",
-    "db:verify": "node scripts/verify-posts-subjects.mjs"
+    "db:verify": "node scripts/verify-posts-subjects.mjs",
+    "posts:delete:multi": "node scripts/delete-posts-multi.mjs"
   },
   "keywords": [
     "portfolio",

@@ -4,7 +4,6 @@ import Home from './pages/Home';
 import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
 import { motion } from 'framer-motion';
-import ThemeToggle from './components/ThemeToggle';
 import './styles/App.css';
 
 const SubjectPage = lazy(() => import('./pages/SubjectPage'));
@@ -294,7 +293,6 @@ function App({ darkMode, setDarkMode }) {
         ].filter(Boolean).join(' ')}
         aria-label="Loading"
       >
-        <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
         <div className="boot-content">
           <motion.div 
             className="boot-signature-loading"
@@ -350,7 +348,6 @@ function App({ darkMode, setDarkMode }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
         <Routes>
           <Route path="/" element={<Home darkMode={darkMode} setDarkMode={setDarkMode} />} />
           <Route path="/subject/:id" element={

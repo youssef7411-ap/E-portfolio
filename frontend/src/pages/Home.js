@@ -118,8 +118,7 @@ function Home({ darkMode, setDarkMode }) {
         className="home-hero"
         variants={itemVariants}
         initial={prefersReducedMotion ? false : 'hidden'}
-        whileInView={prefersReducedMotion ? undefined : 'visible'}
-        viewport={prefersReducedMotion ? undefined : { once: true, margin: "-100px" }}
+        animate={prefersReducedMotion ? undefined : 'visible'}
       >
         <div className="container">
           <motion.h2 className="hero-headline">
@@ -179,10 +178,9 @@ function Home({ darkMode, setDarkMode }) {
                       variants={itemVariants}
                       custom={index}
                       initial={prefersReducedMotion ? false : 'hidden'}
-                      whileInView={prefersReducedMotion ? undefined : 'visible'}
+                      animate={prefersReducedMotion ? undefined : 'visible'}
                       whileHover={prefersReducedMotion ? undefined : { y: -4, scale: 1.01, transition: { duration: 0.18 } }}
                       whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-                      viewport={prefersReducedMotion ? undefined : { once: true }}
                       onClick={() => subjectId && navigate(`/subject/${subjectId}`)}
                     >
                       <div className="featured-top">

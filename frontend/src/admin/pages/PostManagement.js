@@ -312,16 +312,27 @@ export default function PostManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    const post = posts.find(p => p._id === id);
+    const title = post?.title ? String(post.title) : 'this post';
+    const confirm1 = window.confirm(`Delete "${title}" permanently?`);
+    if (!confirm1) return;
+    const confirm2 = window.prompt('Type DELETE to confirm permanent deletion:');
+    if (confirm2 !== 'DELETE') return;
     const token = localStorage.getItem('adminToken');
     try {
-      await fetch(`${API_URL}/api/posts/${id}`, {
+      const res = await fetch(`${API_URL}/api/posts/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.alert(data?.message || 'Failed to delete post');
+        return;
+      }
       fetchData();
     } catch (err) {
       console.error('Delete post error:', err);
+      window.alert('Network error while deleting post');
     }
   };
 
