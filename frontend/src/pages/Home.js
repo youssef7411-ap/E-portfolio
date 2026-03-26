@@ -155,8 +155,7 @@ function Home({ darkMode, setDarkMode }) {
             className="home-panel glass"
             variants={containerVariants}
             initial={prefersReducedMotion ? false : 'hidden'}
-            whileInView={prefersReducedMotion ? undefined : 'visible'}
-            viewport={prefersReducedMotion ? undefined : { once: true }}
+            animate={prefersReducedMotion ? undefined : 'visible'}
           >
             <div className="home-section-head">
               <h3>Featured Projects</h3>
@@ -208,8 +207,7 @@ function Home({ darkMode, setDarkMode }) {
             className="home-panel glass"
             variants={containerVariants}
             initial={prefersReducedMotion ? false : 'hidden'}
-            whileInView={prefersReducedMotion ? undefined : 'visible'}
-            viewport={prefersReducedMotion ? undefined : { once: true }}
+            animate={prefersReducedMotion ? undefined : 'visible'}
           >
             <div className="home-section-head">
               <h3>All Subjects</h3>

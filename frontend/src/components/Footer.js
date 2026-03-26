@@ -25,8 +25,7 @@ const Footer = ({ darkMode }) => {
     <motion.footer 
       className="global-footer" 
       initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
-      whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={prefersReducedMotion ? undefined : { once: true, margin: "-50px" }}
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
       transition={prefersReducedMotion ? undefined : { duration: 0.45, ease: "easeOut" }}
     >
       <div className="container">
@@ -35,8 +34,7 @@ const Footer = ({ darkMode }) => {
             className="footer-signature"
             variants={signatureVariants}
             initial={prefersReducedMotion ? false : 'hidden'}
-            whileInView={prefersReducedMotion ? undefined : 'fill'}
-            viewport={prefersReducedMotion ? undefined : { once: true }}
+            animate={prefersReducedMotion ? undefined : 'fill'}
           >
             <svg viewBox="0 0 500 100" className="cursive-svg">
               <text
@@ -68,4 +66,3 @@ const Footer = ({ darkMode }) => {
 };
 
 export default Footer;
-
