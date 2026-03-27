@@ -4,8 +4,7 @@ import JSZip from 'jszip';
 import { motion, AnimatePresence } from 'framer-motion';
 import 'react-quill/dist/quill.snow.css';
 import '../../styles/PostManagement.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+import { API_URL } from '../../config/api';
 
 const UPLOAD_FILE_ICONS = {
   pdf: '📄', doc: '📝', docx: '📝', txt: '📃',

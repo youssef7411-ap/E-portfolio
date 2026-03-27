@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/AdminLogin.css';
+import { API_URL } from '../config/api';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';const MAX_PARTICLES = 40; // Reduced from 96
-  const MOUSE_SPAWN_INTERVAL_MS = 150; // Increased from 5028;
+const MAX_PARTICLES = 40; // Reduced from 96
+const MOUSE_SPAWN_INTERVAL_MS = 150; // Increased from 50
 
 function nearestBorderPoint(x, y, rect) {
   const distances = {

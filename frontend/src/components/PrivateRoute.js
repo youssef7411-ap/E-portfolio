@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+import { API_URL } from '../config/api';
 
 function PrivateRoute({ children }) {
   const [allowed, setAllowed] = useState(null);

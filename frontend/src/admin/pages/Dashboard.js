@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/Dashboard.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+import { API_URL } from '../../config/api';
 
 function Dashboard() {
   const [stats, setStats] = useState({ subjects: 0, posts: 0, recentUploads: 0, visitors: 0, visitorsToday: 0, withLocation: 0 });

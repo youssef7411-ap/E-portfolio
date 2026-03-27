@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -10,26 +9,13 @@ import subjectRoutes from './routes/subjects.js';
 import postRoutes from './routes/posts.js';
 import visitorRoutes from './routes/visitors.js';
 import authenticate from './middleware/authenticate.js';
+import { hasObjectStorageConfig, uploadBufferToObjectStorage } from './utils/objectStorage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-const hasCloudinaryConfig = Boolean(
-  process.env.CLOUDINARY_CLOUD_NAME
-    && process.env.CLOUDINARY_API_KEY
-    && process.env.CLOUDINARY_API_SECRET
-);
-
-if (hasCloudinaryConfig) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-  });
-}
+app.set('trust proxy', 1);
 
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -38,42 +24,6 @@ if (!fs.existsSync(uploadsDir)) {
 
 const MAX_FILE_SIZE_MB = Number(process.env.MAX_FILE_SIZE_MB || 250);
 const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
-
-const looksLikeCloudinaryTransformation = (segment = '') => (
-  segment.includes(',') || /(^|,)(?:[a-z]{1,3}|fl|fps|t)_[^/]+/i.test(segment)
-);
-
-const toCloudinaryAttachmentUrl = (url) => {
-  if (!url) return url;
-
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return url;
-  }
-
-  if (!/\.?res\.cloudinary\.com$/i.test(parsed.hostname)) return url;
-
-  const segments = parsed.pathname.split('/').filter(Boolean);
-  if (segments.length < 4) return url;
-
-  const [cloudName, resourceType, deliveryType, ...rest] = segments;
-  if (deliveryType !== 'upload' || !rest.length) return url;
-
-  const [first, ...remaining] = rest;
-  const firstParts = String(first || '').split(',');
-  if (firstParts.some((part) => /^fl_attachment(?::|$)/i.test(part))) {
-    return url;
-  }
-
-  const nextSegments = /^v\d+$/i.test(first) || !looksLikeCloudinaryTransformation(first)
-    ? [cloudName, resourceType, deliveryType, 'fl_attachment', ...rest]
-    : [cloudName, resourceType, deliveryType, `fl_attachment,${first}`, ...remaining];
-
-  parsed.pathname = `/${nextSegments.join('/')}`;
-  return parsed.toString();
-};
 
 const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
@@ -87,12 +37,14 @@ const diskStorage = multer.diskStorage({
 const memoryStorage = multer.memoryStorage();
 
 const upload = multer({
-  storage: hasCloudinaryConfig ? memoryStorage : diskStorage,
+  storage: hasObjectStorageConfig() ? memoryStorage : diskStorage,
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (req, file, cb) => cb(null, true),
 });
 
-const corsOriginEnv = process.env.CORS_ORIGIN || process.env.CLIENT_URL || 'http://localhost:3000';
+const corsOriginEnv = process.env.CORS_ORIGIN
+  || process.env.CLIENT_URL
+  || (process.env.NODE_ENV === 'production' ? '*' : 'http://localhost:3000');
 const allowedOrigins = corsOriginEnv.split(',').map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
@@ -107,7 +59,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const MEDIA_EXT_RE = /\.(jpe?g|png|gif|webp|avif|svg|bmp|mp4|webm|mov|avi|mkv|ogg)$/i;
+const MEDIA_EXT_RE = /\.(pdf|jpe?g|png|gif|webp|avif|svg|bmp|mp4|webm|mov|avi|mkv|ogg)$/i;
 app.use('/uploads', (req, res, next) => {
   const ext = path.extname(req.path).toLowerCase();
   if (MEDIA_EXT_RE.test(ext)) {
@@ -126,9 +78,11 @@ app.get('/health', (req, res) => {
 app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-  if (!hasCloudinaryConfig) {
+  if (!hasObjectStorageConfig()) {
     const port = process.env.PORT || 5002;
-    const url = `${process.env.SERVER_URL || `http://localhost:${port}`}/uploads/${req.file.filename}`;
+    const inferredBaseUrl = `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.SERVER_URL || inferredBaseUrl || `http://localhost:${port}`;
+    const url = `${baseUrl}/uploads/${req.file.filename}`;
     return res.json({
       url,
       downloadUrl: url,
@@ -138,31 +92,22 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
     });
   }
 
-  const resourceType = req.file.mimetype?.toLowerCase().startsWith('video/') ? 'video' : 'auto';
-  const ext = path.extname(req.file.originalname).toLowerCase();
-  const publicId = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext ? '' : ''}`;
-
-  cloudinary.uploader
-    .upload_stream(
-      {
-        folder: process.env.CLOUDINARY_UPLOAD_FOLDER || 'e-portfolio',
-        resource_type: resourceType,
-        public_id: publicId,
-      },
-      (error, result) => {
-        if (error || !result) {
-          return res.status(500).json({ message: 'Upload failed' });
-        }
-        return res.json({
-          url: result.secure_url,
-          downloadUrl: toCloudinaryAttachmentUrl(result.secure_url),
-          filename: req.file.originalname,
-          mimetype: req.file.mimetype,
-          size: req.file.size,
-        });
-      }
-    )
-    .end(req.file.buffer);
+  uploadBufferToObjectStorage({
+    buffer: req.file.buffer,
+    originalName: req.file.originalname,
+    mimetype: req.file.mimetype,
+  })
+    .then((result) => res.json({
+      url: result.url,
+      downloadUrl: result.downloadUrl,
+      filename: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    }))
+    .catch((error) => {
+      console.error('Upload failed:', error);
+      res.status(500).json({ message: 'Upload failed' });
+    });
 });
 
 app.use('/api/auth', authRoutes);

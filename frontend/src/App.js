@@ -5,11 +5,11 @@ import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
 import { motion } from 'framer-motion';
 import './styles/App.css';
+import { API_URL } from './config/api';
 
 const SubjectPage = lazy(() => import('./pages/SubjectPage'));
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard'));
 const AdminLogin = lazy(() => import('./components/AdminLogin'));
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
 
 const wait = (ms) => new Promise((resolve) => {
   window.setTimeout(resolve, ms);

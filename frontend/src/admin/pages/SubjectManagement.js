@@ -1,8 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import '../../styles/SubjectManagement.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+import { API_URL } from '../../config/api';
 
 /* ── Sortable row ─────────────────────────────── */
 function SortableRow({ subject, onEdit, onDelete }) {

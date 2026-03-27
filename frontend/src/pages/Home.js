@@ -1,10 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import SubjectCard from '../components/SubjectCard';
 import '../styles/Home.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+import { API_URL } from '../config/api';
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -36,6 +35,10 @@ function Home({ darkMode, setDarkMode }) {
   const [subjects, setSubjects] = useState([]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [subjectSearch, setSubjectSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all'); // all | projects | attachments
+  const [subjectSort, setSubjectSort] = useState('order'); // order | name | recent
+  const [subjectView, setSubjectView] = useState('grid'); // grid | list
   const navigate = useNavigate();
   const subjectsSectionRef = useRef(null);
 
@@ -82,6 +85,64 @@ function Home({ darkMode, setDarkMode }) {
     .filter(p => p.title)
     .sort((a, b) => new Date(b.date_created) - new Date(a.date_created))
     .slice(0, 6);
+
+  const subjectMeta = useMemo(() => {
+    const map = new Map();
+    for (const p of posts) {
+      const subjectId = String(p?.subject_id?._id || p?.subject_id || '');
+      if (!subjectId) continue;
+      const current = map.get(subjectId) || { postCount: 0, projectCount: 0, attachmentCount: 0, lastUpdated: 0 };
+      current.postCount += 1;
+      if (p?.type === 'project') current.projectCount += 1;
+      if ((p?.images?.length || 0) + (p?.videos?.length || 0) + (p?.files?.length || 0) > 0) current.attachmentCount += 1;
+      const t = new Date(p?.updatedAt || p?.date_created || 0).getTime();
+      if (Number.isFinite(t)) current.lastUpdated = Math.max(current.lastUpdated, t);
+      map.set(subjectId, current);
+    }
+    return map;
+  }, [posts]);
+
+  const filteredSubjects = useMemo(() => {
+    const s = subjectSearch.trim().toLowerCase();
+    let list = subjects;
+
+    if (s) {
+      list = list.filter((sub) =>
+        String(sub?.name || '').toLowerCase().includes(s)
+        || String(sub?.description || '').toLowerCase().includes(s)
+      );
+    }
+
+    if (subjectFilter !== 'all') {
+      list = list.filter((sub) => {
+        const meta = subjectMeta.get(String(sub?._id)) || { projectCount: 0, attachmentCount: 0 };
+        return subjectFilter === 'projects'
+          ? meta.projectCount > 0
+          : meta.attachmentCount > 0;
+      });
+    }
+
+    list = [...list].sort((a, b) => {
+      if (subjectSort === 'name') {
+        return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
+      }
+      if (subjectSort === 'recent') {
+        const aMeta = subjectMeta.get(String(a?._id));
+        const bMeta = subjectMeta.get(String(b?._id));
+        const tA = Math.max(new Date(a?.updatedAt || a?.createdAt || 0).getTime(), aMeta?.lastUpdated || 0);
+        const tB = Math.max(new Date(b?.updatedAt || b?.createdAt || 0).getTime(), bMeta?.lastUpdated || 0);
+        return tB - tA;
+      }
+      if (subjectSort === 'order') {
+        const oA = Number(a?.order || 0);
+        const oB = Number(b?.order || 0);
+        if (oA !== oB) return oA - oB;
+      }
+      return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
+    });
+
+    return list;
+  }, [subjects, subjectSearch, subjectFilter, subjectSort, subjectMeta]);
 
   return (
     <div className="home">
@@ -211,24 +272,90 @@ function Home({ darkMode, setDarkMode }) {
           >
             <div className="home-section-head">
               <h3>All Subjects</h3>
-              <span>{subjects.length} total</span>
+              <span>{filteredSubjects.length} shown</span>
+            </div>
+
+            <div className="subjects-toolbar">
+              <div className="subjects-search">
+                <span className="subjects-search-icon">🔎</span>
+                <input
+                  className="subjects-search-input"
+                  value={subjectSearch}
+                  onChange={(e) => setSubjectSearch(e.target.value)}
+                  placeholder="Search subjects..."
+                  type="text"
+                />
+              </div>
+
+              <div className="subjects-controls">
+                <div className="subjects-filters" role="group" aria-label="Subject filters">
+                  <button
+                    type="button"
+                    className={`subjects-chip ${subjectFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => setSubjectFilter('all')}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className={`subjects-chip ${subjectFilter === 'projects' ? 'active' : ''}`}
+                    onClick={() => setSubjectFilter('projects')}
+                  >
+                    Projects
+                  </button>
+                  <button
+                    type="button"
+                    className={`subjects-chip ${subjectFilter === 'attachments' ? 'active' : ''}`}
+                    onClick={() => setSubjectFilter('attachments')}
+                  >
+                    Attachments
+                  </button>
+                </div>
+
+                <select className="subjects-select" value={subjectSort} onChange={(e) => setSubjectSort(e.target.value)}>
+                  <option value="order">Sort: Custom</option>
+                  <option value="recent">Sort: Recent</option>
+                  <option value="name">Sort: Name</option>
+                </select>
+
+                <div className="subjects-view" role="group" aria-label="Subject view">
+                  <button
+                    type="button"
+                    className={`subjects-view-btn ${subjectView === 'grid' ? 'active' : ''}`}
+                    onClick={() => setSubjectView('grid')}
+                    title="Grid view"
+                  >
+                    ⬚⬚
+                  </button>
+                  <button
+                    type="button"
+                    className={`subjects-view-btn ${subjectView === 'list' ? 'active' : ''}`}
+                    onClick={() => setSubjectView('list')}
+                    title="List view"
+                  >
+                    ≡
+                  </button>
+                </div>
+              </div>
             </div>
 
             {loading ? (
               <div className="spinner" />
-            ) : subjects.length === 0 ? (
+            ) : filteredSubjects.length === 0 ? (
               <p className="empty-state">No subjects available yet.</p>
             ) : (
               <motion.div
-                className="subjects-grid"
+                className={`subjects-grid ${subjectView === 'list' ? 'subjects-grid--list' : ''}`}
                 variants={containerVariants}
                 initial={prefersReducedMotion ? false : 'hidden'}
                 animate={prefersReducedMotion ? undefined : 'visible'}
               >
-                {subjects.map((subject, index) => (
+                {filteredSubjects.map((subject) => (
                   <SubjectCard
                     key={subject._id}
                     subject={subject}
+                    variant={subjectView}
+                    meta={subjectMeta.get(String(subject._id)) || { postCount: 0, projectCount: 0 }}
                     onClick={() => navigate(`/subject/${subject._id}`)}
                   />
                 ))}

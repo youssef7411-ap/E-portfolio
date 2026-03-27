@@ -51,39 +51,78 @@ function triggerDownload(href, filename) {
   a.remove();
 }
 
-function looksLikeCloudinaryTransformation(segment = '') {
-  return segment.includes(',') || /(^|,)(?:[a-z]{1,3}|fl|fps|t)_[^/]+/i.test(segment);
+function toDownloadUrl(url) {
+  return url; // Direct URL for R2/local storage
 }
 
-function toDownloadUrl(url) {
-  if (!url) return url;
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return url;
+function isPreviewableInline(file) {
+  const name = String(file?.name || file?.file_name || '').toLowerCase();
+  const url = String(file?.url || file?.downloadUrl || '').toLowerCase();
+  const mimetype = String(file?.mimetype || '').toLowerCase();
+  const ext = (name.split('.').pop() || url.split('.').pop() || '').split('?')[0].toLowerCase();
+
+  const isPdf = mimetype === 'application/pdf' || ext === 'pdf' || url.includes('.pdf');
+  const isImage = mimetype.startsWith('image/')
+    || /\.(png|jpe?g|gif|webp|avif|svg|bmp)(\?.*)?$/i.test(url)
+    || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'bmp'].includes(ext);
+
+  return isPdf || isImage;
+}
+
+function openInfoTab({ title, message }) {
+  const safeTitle = String(title || 'Preview not available').replace(/[<>]/g, '');
+  const safeMessage = String(message || '').replace(/[<>]/g, '');
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>${safeTitle}</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:#0b1020; color:#e7e9ee; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+    .card { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 22px; }
+    h1 { margin: 0 0 10px; font-size: 20px; }
+    p { margin: 0; line-height: 1.6; color: rgba(231,233,238,.85); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>${safeTitle}</h1>
+      <p>${safeMessage}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const tab = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+  if (tab) {
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
+  } else {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
+
+function handlePreview(file) {
+  const name = String(file?.name || file?.file_name || 'File');
+  const isFolder = name.includes('/');
+  const url = String(file?.url || file?.downloadUrl || '');
+  const lowerName = name.toLowerCase();
+  const ext = (lowerName.split('.').pop() || '').toLowerCase();
+  const isFolderLike = isFolder || ['zip', 'rar', '7z'].includes(ext) || ['js', 'ts', 'py', 'java', 'c', 'cpp', 'cs', 'html', 'css', 'json', 'xml', 'yml', 'yaml', 'md', 'txt'].includes(ext);
+
+  if (isFolderLike || !isPreviewableInline(file)) {
+    openInfoTab({
+      title: 'Preview not available',
+      message: 'This is a folder. To access it, please download it first.',
+    });
+    return;
   }
 
-  if (!/\.?res\.cloudinary\.com$/i.test(parsed.hostname)) return url;
-
-  const segments = parsed.pathname.split('/').filter(Boolean);
-  if (segments.length < 4) return url;
-
-  const [cloudName, resourceType, deliveryType, ...rest] = segments;
-  if (deliveryType !== 'upload' || !rest.length) return url;
-
-  const [first, ...remaining] = rest;
-  const firstParts = String(first || '').split(',');
-  if (firstParts.some(part => /^fl_attachment(?::|$)/i.test(part))) {
-    return url;
-  }
-
-  const nextSegments = /^v\d+$/i.test(first) || !looksLikeCloudinaryTransformation(first)
-    ? [cloudName, resourceType, deliveryType, 'fl_attachment', ...rest]
-    : [cloudName, resourceType, deliveryType, `fl_attachment,${first}`, ...remaining];
-
-  parsed.pathname = `/${nextSegments.join('/')}`;
-  return parsed.toString();
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function PostCard({ post, variants }) {
@@ -254,7 +293,6 @@ function PostCard({ post, variants }) {
           <ul className="pc-file-list">
             {allFiles.map((file, i) => {
               const name = file.name || file.file_name || `File ${i + 1}`;
-              const url  = file.url;
               const isFolder = name.includes('/');
               return (
                 <li key={i} className="pc-file-item">
@@ -263,28 +301,24 @@ function PostCard({ post, variants }) {
                   {file.size > 0 && (
                     <span className="pc-file-size">{formatBytes(file.size)}</span>
                   )}
-                  {!isFolder ? (
-                  <a
-                    href={url}
-                    target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-ghost btn-sm pc-preview-btn"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      👁 Preview
-                    </a>
-                  ) : (
-                    <span className="pc-preview-unavailable" style={{ color: '#888', fontStyle: 'italic', marginRight: '0.5em' }}>
-                      Preview not available for folders
-                    </span>
-                  )}
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm pc-preview-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreview(file);
+                    }}
+                    aria-disabled={isFolder ? 'true' : undefined}
+                  >
+                    👁 Preview
+                  </button>
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm pc-download-btn"
                     onClick={e => handleFileDownload(e, file, i)}
-                    disabled={downloadingFile === toDownloadUrl(file?.downloadUrl || url)}
+                    disabled={downloadingFile === toDownloadUrl(file?.downloadUrl || file?.url)}
                   >
-                    {downloadingFile === toDownloadUrl(file?.downloadUrl || url) ? 'Preparing...' : '⬇ Download'}
+                    {downloadingFile === toDownloadUrl(file?.downloadUrl || file?.url) ? 'Preparing...' : '⬇ Download'}
                   </button>
                 </li>
               );
