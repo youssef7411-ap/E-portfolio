@@ -8,6 +8,12 @@ cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
+  ...(process.env.CLOUDINARY_AUTH_TOKEN_KEY ? {
+    auth_token: {
+      key: process.env.CLOUDINARY_AUTH_TOKEN_KEY,
+      duration: Number(process.env.CLOUDINARY_AUTH_TOKEN_DURATION || 300),
+    },
+  } : {}),
 });
  
 const router = express.Router();
@@ -142,4 +148,3 @@ router.get('/download', async (req, res) => {
 });
  
 export default router;
-
