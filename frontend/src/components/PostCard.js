@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import JSZip from 'jszip';
 import '../styles/PostCard.css';
 import { API_URL } from '../config/api';
@@ -58,23 +58,6 @@ function toDownloadUrl(url) {
 
 function isCloudinaryUrl(value) {
   return /(^|\/\/)res\.cloudinary\.com\//i.test(String(value || ''));
-}
-
-function getUploadTimestamp(file) {
-  const url = String(file?.downloadUrl || file?.url || '');
-  const name = String(file?.name || file?.file_name || '');
-  const fromUrl = url.match(/\/uploads\/(\d{10,})-/)?.[1];
-  const fromName = name.match(/^(\d{10,})-/)?.[1];
-  const raw = fromUrl || fromName;
-  const n = raw ? Number(raw) : NaN;
-  return Number.isFinite(n) ? n : 0;
-}
-
-function normalizeFileKey(file, index) {
-  const url = String(file?.downloadUrl || file?.url || '');
-  if (url) return url;
-  const name = String(file?.name || file?.file_name || '');
-  return name ? `name:${name}` : `idx:${index}`;
 }
 
 function isPreviewableInline(file) {
@@ -155,8 +138,6 @@ function PostCard({ post, variants }) {
   const [imgExpanded, setImgExpanded] = useState(null);
   const [zipping, setZipping] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState('');
-  const viewedKeysRef = useRef(new Set());
-  const [, forceUpdate] = useState(0);
   const reduceMotion = useReducedMotion();
 
   const safeHTML = DOMPurify.sanitize(post.description || '');
@@ -167,42 +148,6 @@ function PostCard({ post, variants }) {
   const videos = useMemo(() => (Array.isArray(post?.videos) ? post.videos : []), [post?.videos]);
   const hasFolderStructure = allFiles.some(f => (f?.name || '').includes('/'));
 
-  const newestFile = useMemo(() => {
-    if (!allFiles.length) return null;
-    const withTs = allFiles
-      .map((f, i) => ({ f, i, ts: getUploadTimestamp(f) }))
-      .filter((x) => x.ts > 0);
-    if (!withTs.length) {
-      return { file: allFiles[allFiles.length - 1], ts: 0 };
-    }
-    withTs.sort((a, b) => b.ts - a.ts);
-    return { file: withTs[0].f, ts: withTs[0].ts };
-  }, [allFiles]);
-
-  const viewedCount = useMemo(() => {
-    const keys = viewedKeysRef.current;
-    let count = 0;
-    for (let i = 0; i < allFiles.length; i += 1) {
-      if (keys.has(normalizeFileKey(allFiles[i], i))) count += 1;
-    }
-    return count;
-  }, [allFiles]);
-
-  const fileProgress = allFiles.length ? Math.round((viewedCount / allFiles.length) * 100) : 0;
-
-  const hasNewFiles = useMemo(() => {
-    const now = Date.now();
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const byFile = allFiles.some((f) => {
-      const ts = getUploadTimestamp(f);
-      return ts > 0 && now - ts <= weekMs;
-    });
-    if (byFile) return true;
-    const updated = new Date(post?.updatedAt || post?.date_created || 0).getTime();
-    const hasAnyAttachments = (images.length + videos.length + allFiles.length) > 0;
-    return hasAnyAttachments && Number.isFinite(updated) && now - updated <= weekMs;
-  }, [allFiles, images.length, videos.length, post?.updatedAt, post?.date_created]);
-
   const tags = [
     post.type ? String(post.type).charAt(0).toUpperCase() + String(post.type).slice(1) : null,
     post.semester,
@@ -212,21 +157,10 @@ function PostCard({ post, variants }) {
     allFiles.length ? `${allFiles.length} file${allFiles.length > 1 ? 's' : ''}` : null,
   ].filter(Boolean);
 
-  const newestFileName = String(newestFile?.file?.name || newestFile?.file?.file_name || '').trim();
-
-  const markViewed = (file, index) => {
-    viewedKeysRef.current.add(normalizeFileKey(file, index));
-    forceUpdate((v) => v + 1);
-  };
-
   const handleDownloadFolder = async e => {
     e.stopPropagation();
     if (!allFiles.length || zipping) return;
     setZipping(true);
-    for (let i = 0; i < allFiles.length; i += 1) {
-      viewedKeysRef.current.add(normalizeFileKey(allFiles[i], i));
-    }
-    forceUpdate((v) => v + 1);
     try {
       const zip = new JSZip();
       for (let i = 0; i < allFiles.length; i += 1) {
@@ -266,11 +200,9 @@ function PostCard({ post, variants }) {
     if (isCloudinaryUrl(url)) {
       const finalUrl = `${API_URL}/api/files/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`;
       window.open(finalUrl, '_blank', 'noopener,noreferrer');
-      markViewed(file, index);
       return;
     }
 
-    markViewed(file, index);
     setDownloadingFile(url);
     try {
       const response = await fetch(url);
@@ -303,36 +235,9 @@ function PostCard({ post, variants }) {
       {/* ── Meta bar ── */}
       <div className="pc-meta-bar">
         <div className="pc-tags">
-          {tags.map(tag => {
-            const isFileCount = typeof tag === 'string' && /\bfile(s)?\b/i.test(tag);
-            return (
-              <span key={tag} className={`pc-tag ${isFileCount ? 'pc-tag--key' : ''}`}>
-                {tag}
-              </span>
-            );
-          })}
-          {newestFileName && (
-            <span className="pc-tag pc-tag--key" title={newestFileName}>
-              Newest: {newestFileName}
-            </span>
-          )}
+          {tags.map(tag => <span key={tag} className="pc-tag">{tag}</span>)}
         </div>
-        <div className="pc-meta-right">
-          <AnimatePresence>
-            {hasNewFiles && (
-              <motion.span
-                className="pc-new-badge"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.22 }}
-              >
-                New files
-              </motion.span>
-            )}
-          </AnimatePresence>
-          <time className="pc-date">{new Date(post.date_created).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</time>
-        </div>
+        <time className="pc-date">{new Date(post.date_created).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</time>
       </div>
 
       {/* ── Title ── */}
@@ -392,24 +297,6 @@ function PostCard({ post, variants }) {
           <div className="pc-files-head">
             <h4 className="pc-section-label">📁 Files</h4>
             <div className="pc-files-actions">
-              <div className="pc-progress" title={`${viewedCount}/${allFiles.length} files viewed`}>
-                <svg className="pc-progress-svg" viewBox="0 0 36 36" aria-hidden="true">
-                  <path
-                    className="pc-progress-bg"
-                    d="M18 2.0845
-                       a 15.9155 15.9155 0 0 1 0 31.831
-                       a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path
-                    className="pc-progress-fg"
-                    strokeDasharray={`${fileProgress}, 100`}
-                    d="M18 2.0845
-                       a 15.9155 15.9155 0 0 1 0 31.831
-                       a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                </svg>
-                <span className="pc-progress-text">{viewedCount}/{allFiles.length}</span>
-              </div>
               {hasFolderStructure && (
                 <button
                   type="button"
@@ -438,7 +325,6 @@ function PostCard({ post, variants }) {
                     className="btn btn-ghost btn-sm pc-preview-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      markViewed(file, i);
                       handlePreview(file);
                     }}
                     aria-disabled={isFolder ? 'true' : undefined}

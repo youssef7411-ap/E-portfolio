@@ -77,7 +77,9 @@ const preloadPublicGraphics = async (onProgress) => {
   });
 
   const uniqueImages = [...new Set([...subjectImages, ...postImages])];
-  const total = uniqueImages.length;
+  const MAX_PRELOAD_IMAGES = 18;
+  const preloadImages = uniqueImages.slice(0, MAX_PRELOAD_IMAGES);
+  const total = preloadImages.length;
   let loaded = 0;
 
   if (onProgress) {
@@ -85,8 +87,8 @@ const preloadPublicGraphics = async (onProgress) => {
   }
 
   const CONCURRENCY = 6;
-  for (let i = 0; i < uniqueImages.length; i += CONCURRENCY) {
-    const batch = uniqueImages.slice(i, i + CONCURRENCY);
+  for (let i = 0; i < preloadImages.length; i += CONCURRENCY) {
+    const batch = preloadImages.slice(i, i + CONCURRENCY);
     await Promise.allSettled(batch.map((url) => loadImage(url)));
     loaded += batch.length;
     if (onProgress) {

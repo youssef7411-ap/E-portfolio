@@ -84,7 +84,7 @@ function Home({ darkMode, setDarkMode }) {
   const featuredProjects = [...posts]
     .filter(p => p.title)
     .sort((a, b) => new Date(b.date_created) - new Date(a.date_created))
-    .slice(0, 6);
+    .slice(0, 3);
 
   const subjectMeta = useMemo(() => {
     const map = new Map();
@@ -288,29 +288,11 @@ function Home({ darkMode, setDarkMode }) {
               </div>
 
               <div className="subjects-controls">
-                <div className="subjects-filters" role="group" aria-label="Subject filters">
-                  <button
-                    type="button"
-                    className={`subjects-chip ${subjectFilter === 'all' ? 'active' : ''}`}
-                    onClick={() => setSubjectFilter('all')}
-                  >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    className={`subjects-chip ${subjectFilter === 'projects' ? 'active' : ''}`}
-                    onClick={() => setSubjectFilter('projects')}
-                  >
-                    Projects
-                  </button>
-                  <button
-                    type="button"
-                    className={`subjects-chip ${subjectFilter === 'attachments' ? 'active' : ''}`}
-                    onClick={() => setSubjectFilter('attachments')}
-                  >
-                    Attachments
-                  </button>
-                </div>
+                <select className="subjects-select" value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
+                  <option value="all">Filter: All</option>
+                  <option value="projects">Filter: Projects</option>
+                  <option value="attachments">Filter: Attachments</option>
+                </select>
 
                 <select className="subjects-select" value={subjectSort} onChange={(e) => setSubjectSort(e.target.value)}>
                   <option value="order">Sort: Custom</option>
