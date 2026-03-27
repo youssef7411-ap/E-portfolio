@@ -39,6 +39,25 @@ function normalizeZipPath(path, fallbackName) {
     .join('/');
 }
 
+function toDownloadUrl(url) {
+  if (!url) return url;
+  if (!/https:\/\/res\.cloudinary\.com\//i.test(url)) return url;
+  const marker = '/upload/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return url;
+  const before = url.slice(0, idx + marker.length);
+  const after = url.slice(idx + marker.length);
+  if (!after) return `${before}fl_attachment`;
+  if (after.startsWith('fl_attachment')) return url;
+  const firstSlash = after.indexOf('/');
+  if (firstSlash === -1) return `${before}fl_attachment/${after}`;
+  const firstSeg = after.slice(0, firstSlash);
+  if (/^v\d+$/i.test(firstSeg)) {
+    return `${before}fl_attachment/${after}`;
+  }
+  return `${before}fl_attachment,${after}`;
+}
+
 function PostCard({ post, variants }) {
   const [imgExpanded, setImgExpanded] = useState(null);
   const [zipping, setZipping] = useState(false);
@@ -71,7 +90,7 @@ function PostCard({ post, variants }) {
         const name = file?.name || `file-${i + 1}`;
         const url = file?.url;
         if (!url) continue;
-        const response = await fetch(url);
+        const response = await fetch(toDownloadUrl(url));
         if (!response.ok) continue;
         const blob = await response.blob();
         zip.file(normalizeZipPath(name, `file-${i + 1}`), blob);
@@ -186,10 +205,8 @@ function PostCard({ post, variants }) {
                     <span className="pc-file-size">{formatBytes(file.size)}</span>
                   )}
                   <a
-                    href={url}
+                    href={toDownloadUrl(url)}
                     download={name}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="btn btn-ghost btn-sm pc-download-btn"
                     onClick={e => e.stopPropagation()}
                   >
