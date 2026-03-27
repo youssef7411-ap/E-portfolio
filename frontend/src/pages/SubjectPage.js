@@ -158,12 +158,18 @@ function SubjectPage({ darkMode, setDarkMode }) {
       </header>
 
       <div className="container sp-body">
-        {/* Sidebar filters */}
-        <aside className="sp-sidebar glass">
-          <div className="sp-sidebar-header">
-            <h3>Filters</h3>
+        <section className="sp-filters glass" aria-label="Subject filters">
+          <div className="sp-filters-top">
+            <div className="sp-filters-title">
+              <h2 className="sp-filters-heading">Filter & Browse</h2>
+              <div className="sp-count">
+                Showing <strong>{filtered.length}</strong> of <strong>{posts.length}</strong>
+              </div>
+            </div>
+
             {(filters.semester || filters.grade || filters.type || search || attachmentMode !== 'any' || dateRange !== 'all') && (
               <button
+                type="button"
                 className="sp-reset-btn"
                 onClick={() => {
                   setFilters({ semester: '', grade: '', type: '' });
@@ -177,109 +183,117 @@ function SubjectPage({ darkMode, setDarkMode }) {
             )}
           </div>
 
-          <div className="sp-filter-group">
-            <label htmlFor="sp-search">Search Posts</label>
-            <div className="sp-search-wrap">
-              <span className="search-icon">🔍</span>
-              <input
-                className="sp-control"
-                id="sp-search"
-                type="text"
-                placeholder="Find a post..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+          <div className="sp-filters-grid">
+            <div className="sp-filter-block sp-filter-block--span2">
+              <label className="sp-label" htmlFor="sp-search">Search</label>
+              <div className="sp-search-wrap">
+                <span className="search-icon">🔍</span>
+                <input
+                  className="sp-control sp-control--input"
+                  id="sp-search"
+                  type="text"
+                  placeholder="Search by title or description…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="sp-filter-group">
-            <label>Category</label>
-            <div className="sp-type-chips">
-              <button 
-                className={`sp-chip ${!filters.type ? 'active' : ''}`}
-                onClick={() => setFilters(f => ({ ...f, type: '' }))}
+            <div className="sp-filter-block">
+              <label className="sp-label" htmlFor="sp-category">Category</label>
+              <select
+                id="sp-category"
+                className="sp-control sp-control--select"
+                value={filters.type}
+                onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
               >
-                All <span className="sp-chip-count">{posts.length}</span>
-              </button>
-              {types.map(t => (
-                <button
-                  key={t.id}
-                  className={`sp-chip ${filters.type === t.id ? 'active' : ''}`}
-                  onClick={() => setFilters(f => ({ ...f, type: f.type === t.id ? '' : t.id }))}
-                >
-                  <span className="chip-icon">{t.icon}</span>
-                  {t.label} <span className="sp-chip-count">{typeCounts.get(t.id) || 0}</span>
-                </button>
-              ))}
+                <option value="">All ({posts.length})</option>
+                {types.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label} ({typeCounts.get(t.id) || 0})
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          <div className="sp-filter-row">
-            <div className="sp-filter-group">
-              <label>Attachments</label>
-              <select className="sp-control" value={attachmentMode} onChange={e => setAttachmentMode(e.target.value)}>
+            <div className="sp-filter-block">
+              <label className="sp-label" htmlFor="sp-attachments">Attachments</label>
+              <select
+                id="sp-attachments"
+                className="sp-control sp-control--select"
+                value={attachmentMode}
+                onChange={e => setAttachmentMode(e.target.value)}
+              >
                 <option value="any">Any</option>
                 <option value="with">Has attachments</option>
                 <option value="without">No attachments</option>
               </select>
             </div>
 
-            <div className="sp-filter-group">
-              <label>Date</label>
-              <select className="sp-control" value={dateRange} onChange={e => setDateRange(e.target.value)}>
+            <div className="sp-filter-block">
+              <label className="sp-label" htmlFor="sp-semester">Semester</label>
+              <select
+                id="sp-semester"
+                className="sp-control sp-control--select"
+                value={filters.semester}
+                onChange={e => setFilters(f => ({ ...f, semester: e.target.value }))}
+              >
+                <option value="">All</option>
+                {semesters.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div className="sp-filter-block">
+              <label className="sp-label" htmlFor="sp-grade">Grade</label>
+              <select
+                id="sp-grade"
+                className="sp-control sp-control--select"
+                value={filters.grade}
+                onChange={e => setFilters(f => ({ ...f, grade: e.target.value }))}
+              >
+                <option value="">All</option>
+                {grades.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+
+            <div className="sp-filter-block">
+              <label className="sp-label" htmlFor="sp-date">Date</label>
+              <select
+                id="sp-date"
+                className="sp-control sp-control--select"
+                value={dateRange}
+                onChange={e => setDateRange(e.target.value)}
+              >
                 <option value="all">All time</option>
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
                 <option value="365d">Last 12 months</option>
               </select>
             </div>
-          </div>
 
-          <div className="sp-filter-row">
-            <div className="sp-filter-group">
-              <label>Semester</label>
-              <select className="sp-control" value={filters.semester} onChange={e => setFilters(f => ({ ...f, semester: e.target.value }))}>
-                <option value="">All</option>
-                {semesters.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-
-            <div className="sp-filter-group">
-              <label>Grade</label>
-              <select className="sp-control" value={filters.grade} onChange={e => setFilters(f => ({ ...f, grade: e.target.value }))}>
-                <option value="">All</option>
-                {grades.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="sp-filter-group">
-            <label>Sort By</label>
-            <div className="sp-sort-toggle">
-              <button 
-                className={`sp-sort-btn ${sortOrder === 'desc' ? 'active' : ''}`}
-                onClick={() => setSortOrder('desc')}
-              >
-                Newest
-              </button>
-              <button 
-                className={`sp-sort-btn ${sortOrder === 'asc' ? 'active' : ''}`}
-                onClick={() => setSortOrder('asc')}
-              >
-                Oldest
-              </button>
+            <div className="sp-filter-block">
+              <label className="sp-label">Sort</label>
+              <div className="sp-segment" role="group" aria-label="Sort order">
+                <button
+                  type="button"
+                  className={`sp-segment-btn ${sortOrder === 'desc' ? 'active' : ''}`}
+                  onClick={() => setSortOrder('desc')}
+                >
+                  Newest
+                </button>
+                <button
+                  type="button"
+                  className={`sp-segment-btn ${sortOrder === 'asc' ? 'active' : ''}`}
+                  onClick={() => setSortOrder('asc')}
+                >
+                  Oldest
+                </button>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="sp-sidebar-footer">
-            <div className="sp-count">
-              Showing <strong>{filtered.length}</strong> of <strong>{posts.length}</strong> posts
-            </div>
-          </div>
-        </aside>
-
-        {/* Posts */}
-        <main className="sp-posts">
+        <main className="sp-posts" aria-label="Posts list">
           {filtered.length === 0 ? (
             <div className="sp-empty glass">
               <div className="empty-icon">📂</div>
