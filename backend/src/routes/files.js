@@ -36,8 +36,8 @@ const parseCloudinaryUrl = (value) => {
     const uploadIndex = parts.findIndex((p) => p === 'upload');
     if (uploadIndex === -1) return null;
  
-    const cloudName = parts[1] || '';
-    const resourceType = parts[2] || '';
+    const cloudName = parts[0] || '';
+    const resourceType = parts[1] || '';
     if (!cloudName || !['image', 'raw', 'video'].includes(resourceType)) return null;
  
     const afterUpload = parts.slice(uploadIndex + 1);
