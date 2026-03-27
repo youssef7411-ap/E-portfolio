@@ -1,6 +1,8 @@
 import express from 'express';
 import crypto from 'crypto';
 import path from 'path';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
  
 const cloudinary = await import('cloudinary').then(m => m.v2);
  
@@ -75,20 +77,16 @@ const headOk = async (url) => {
   }
 };
  
-const buildCandidateUrls = ({ resourceType, publicId, format, forDownload, attachmentName }) => {
+const buildCandidateUrls = ({ resourceType, publicId, format }) => {
   const base = {
     secure: true,
     resource_type: resourceType,
     sign_url: true,
     ...(format ? { format } : {}),
   };
- 
-  const flags = forDownload
-    ? { flags: attachmentName ? `attachment:${attachmentName}` : 'attachment' }
-    : {};
- 
+
   const types = ['upload', 'private', 'authenticated'];
-  return types.map((type) => cloudinary.url(publicId, { ...base, type, ...flags }));
+  return types.map((type) => cloudinary.url(publicId, { ...base, type }));
 };
  
 const resolveAccessibleUrl = async (candidates) => {
@@ -105,46 +103,80 @@ const ensureReady = () => Boolean(
   && process.env.CLOUDINARY_API_SECRET
 );
  
-const handleRedirect = async (req, res, { forDownload }) => {
-  const originalUrl = String(req.query.url || '').trim();
-  const name = sanitizeAttachmentName(req.query.name);
- 
+const resolveCloudinaryOrOriginalUrl = async (originalUrl) => {
   if (!originalUrl || !isHttpUrl(originalUrl)) {
-    return res.status(400).json({ message: 'Missing or invalid url' });
+    return { ok: false, status: 400, message: 'Missing or invalid url', url: '' };
   }
  
   if (!isCloudinaryDeliveryUrl(originalUrl) || !ensureReady()) {
-    return res.redirect(302, originalUrl);
+    return { ok: true, url: originalUrl };
   }
  
   const parsed = parseCloudinaryUrl(originalUrl);
   if (!parsed) {
-    return res.redirect(302, originalUrl);
+    return { ok: true, url: originalUrl };
   }
  
   const candidates = buildCandidateUrls({
     resourceType: parsed.resourceType,
     publicId: parsed.publicId,
     format: parsed.format,
-    forDownload,
-    attachmentName: name,
   });
  
   const resolved = await resolveAccessibleUrl(candidates);
   if (!resolved) {
     const fallbackId = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    return res.status(502).json({ message: `Could not resolve file (${fallbackId})` });
+    return { ok: false, status: 502, message: `Could not resolve file (${fallbackId})`, url: '' };
   }
  
-  return res.redirect(302, resolved);
+  return { ok: true, url: resolved };
 };
  
 router.get('/preview', async (req, res) => {
-  return handleRedirect(req, res, { forDownload: false });
+  const originalUrl = String(req.query.url || '').trim();
+  const resolved = await resolveCloudinaryOrOriginalUrl(originalUrl);
+  if (!resolved.ok) {
+    return res.status(resolved.status || 502).json({ message: resolved.message || 'Preview failed' });
+  }
+  return res.redirect(302, resolved.url);
 });
  
 router.get('/download', async (req, res) => {
-  return handleRedirect(req, res, { forDownload: true });
+  const originalUrl = String(req.query.url || '').trim();
+  const name = sanitizeAttachmentName(req.query.name);
+  const resolved = await resolveCloudinaryOrOriginalUrl(originalUrl);
+  if (!resolved.ok) {
+    return res.status(resolved.status || 502).json({ message: resolved.message || 'Download failed' });
+  }
+ 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+ 
+  try {
+    const upstream = await fetch(resolved.url, { redirect: 'follow', signal: controller.signal });
+    if (!upstream.ok || !upstream.body) {
+      return res.status(upstream.status || 502).json({ message: `Upstream download failed (${upstream.status})` });
+    }
+ 
+    const contentType = upstream.headers.get('content-type');
+    const contentLength = upstream.headers.get('content-length');
+    if (contentType) res.setHeader('Content-Type', contentType);
+    if (contentLength) res.setHeader('Content-Length', contentLength);
+ 
+    const asciiName = name.replace(/[^\x20-\x7E]+/g, '').trim() || 'download';
+    const encoded = encodeURIComponent(name);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${asciiName}"; filename*=UTF-8''${encoded}`
+    );
+ 
+    res.setHeader('Cache-Control', 'private, max-age=0, no-cache');
+    await pipeline(Readable.fromWeb(upstream.body), res);
+  } catch {
+    return res.status(502).json({ message: 'Download failed' });
+  } finally {
+    clearTimeout(timer);
+  }
 });
  
 export default router;
