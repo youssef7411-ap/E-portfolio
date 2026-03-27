@@ -40,6 +40,7 @@ const postSchema = new mongoose.Schema({
     {
       name: String,
       url: String,
+      downloadUrl: String,
       mimetype: { type: String, default: '' },
       size: { type: Number, default: 0 },
     }

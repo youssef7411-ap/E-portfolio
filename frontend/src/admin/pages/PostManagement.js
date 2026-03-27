@@ -214,6 +214,7 @@ export default function PostManagement() {
               files: [...prev.files, {
                 name: displayName,
                 url: data.url,
+                downloadUrl: data.downloadUrl || data.url,
                 mimetype: data.mimetype || '',
                 size: data.size || 0,
               }],

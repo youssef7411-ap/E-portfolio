@@ -39,28 +39,57 @@ function normalizeZipPath(path, fallbackName) {
     .join('/');
 }
 
+function triggerDownload(href, filename) {
+  const a = document.createElement('a');
+  a.href = href;
+  if (filename) {
+    a.download = filename;
+  }
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function looksLikeCloudinaryTransformation(segment = '') {
+  return segment.includes(',') || /(^|,)(?:[a-z]{1,3}|fl|fps|t)_[^/]+/i.test(segment);
+}
+
 function toDownloadUrl(url) {
   if (!url) return url;
-  if (!/https:\/\/res\.cloudinary\.com\//i.test(url)) return url;
-  const marker = '/upload/';
-  const idx = url.indexOf(marker);
-  if (idx === -1) return url;
-  const before = url.slice(0, idx + marker.length);
-  const after = url.slice(idx + marker.length);
-  if (!after) return `${before}fl_attachment`;
-  if (after.startsWith('fl_attachment')) return url;
-  const firstSlash = after.indexOf('/');
-  if (firstSlash === -1) return `${before}fl_attachment/${after}`;
-  const firstSeg = after.slice(0, firstSlash);
-  if (/^v\d+$/i.test(firstSeg)) {
-    return `${before}fl_attachment/${after}`;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
   }
-  return `${before}fl_attachment,${after}`;
+
+  if (!/\.?res\.cloudinary\.com$/i.test(parsed.hostname)) return url;
+
+  const segments = parsed.pathname.split('/').filter(Boolean);
+  if (segments.length < 4) return url;
+
+  const [cloudName, resourceType, deliveryType, ...rest] = segments;
+  if (deliveryType !== 'upload' || !rest.length) return url;
+
+  const [first, ...remaining] = rest;
+  const firstParts = String(first || '').split(',');
+  if (firstParts.some(part => /^fl_attachment(?::|$)/i.test(part))) {
+    return url;
+  }
+
+  const nextSegments = /^v\d+$/i.test(first) || !looksLikeCloudinaryTransformation(first)
+    ? [cloudName, resourceType, deliveryType, 'fl_attachment', ...rest]
+    : [cloudName, resourceType, deliveryType, `fl_attachment,${first}`, ...remaining];
+
+  parsed.pathname = `/${nextSegments.join('/')}`;
+  return parsed.toString();
 }
 
 function PostCard({ post, variants }) {
   const [imgExpanded, setImgExpanded] = useState(null);
   const [zipping, setZipping] = useState(false);
+  const [downloadingFile, setDownloadingFile] = useState('');
   const reduceMotion = useReducedMotion();
 
   const safeHTML = DOMPurify.sanitize(post.description || '');
@@ -88,7 +117,7 @@ function PostCard({ post, variants }) {
       for (let i = 0; i < allFiles.length; i += 1) {
         const file = allFiles[i];
         const name = file?.name || `file-${i + 1}`;
-        const url = file?.url;
+        const url = file?.downloadUrl || file?.url;
         if (!url) continue;
         const response = await fetch(toDownloadUrl(url));
         if (!response.ok) continue;
@@ -109,6 +138,35 @@ function PostCard({ post, variants }) {
       console.error('Folder zip download failed:', err);
     } finally {
       setZipping(false);
+    }
+  };
+
+  const handleFileDownload = async (e, file, index) => {
+    e.stopPropagation();
+    const name = file?.name || file?.file_name || `File ${index + 1}`;
+    const url = toDownloadUrl(file?.downloadUrl || file?.url);
+    if (!url || downloadingFile === url) return;
+
+    setDownloadingFile(url);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      if (!blob.size) {
+        throw new Error('Download returned an empty file');
+      }
+
+      const href = URL.createObjectURL(blob);
+      triggerDownload(href, name);
+      URL.revokeObjectURL(href);
+    } catch (err) {
+      console.error('File download failed:', err);
+      triggerDownload(url, name);
+    } finally {
+      setDownloadingFile('');
     }
   };
 
@@ -197,6 +255,7 @@ function PostCard({ post, variants }) {
             {allFiles.map((file, i) => {
               const name = file.name || file.file_name || `File ${i + 1}`;
               const url  = file.url;
+              const isFolder = name.includes('/');
               return (
                 <li key={i} className="pc-file-item">
                   <span className="pc-file-icon">{fileIcon(name)}</span>
@@ -204,23 +263,29 @@ function PostCard({ post, variants }) {
                   {file.size > 0 && (
                     <span className="pc-file-size">{formatBytes(file.size)}</span>
                   )}
+                  {!isFolder ? (
                   <a
                     href={url}
                     target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-ghost btn-sm pc-preview-btn"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    👁 Preview
-                  </a>
-                  <a
-                    href={toDownloadUrl(url)}
-                    download={name}
+                      rel="noopener noreferrer"
+                      className="btn btn-ghost btn-sm pc-preview-btn"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      👁 Preview
+                    </a>
+                  ) : (
+                    <span className="pc-preview-unavailable" style={{ color: '#888', fontStyle: 'italic', marginRight: '0.5em' }}>
+                      Preview not available for folders
+                    </span>
+                  )}
+                  <button
+                    type="button"
                     className="btn btn-ghost btn-sm pc-download-btn"
-                    onClick={e => e.stopPropagation()}
+                    onClick={e => handleFileDownload(e, file, i)}
+                    disabled={downloadingFile === toDownloadUrl(file?.downloadUrl || url)}
                   >
-                    ⬇ Download
-                  </a>
+                    {downloadingFile === toDownloadUrl(file?.downloadUrl || url) ? 'Preparing...' : '⬇ Download'}
+                  </button>
                 </li>
               );
             })}

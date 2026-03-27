@@ -39,6 +39,42 @@ if (!fs.existsSync(uploadsDir)) {
 const MAX_FILE_SIZE_MB = Number(process.env.MAX_FILE_SIZE_MB || 250);
 const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
+const looksLikeCloudinaryTransformation = (segment = '') => (
+  segment.includes(',') || /(^|,)(?:[a-z]{1,3}|fl|fps|t)_[^/]+/i.test(segment)
+);
+
+const toCloudinaryAttachmentUrl = (url) => {
+  if (!url) return url;
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+
+  if (!/\.?res\.cloudinary\.com$/i.test(parsed.hostname)) return url;
+
+  const segments = parsed.pathname.split('/').filter(Boolean);
+  if (segments.length < 4) return url;
+
+  const [cloudName, resourceType, deliveryType, ...rest] = segments;
+  if (deliveryType !== 'upload' || !rest.length) return url;
+
+  const [first, ...remaining] = rest;
+  const firstParts = String(first || '').split(',');
+  if (firstParts.some((part) => /^fl_attachment(?::|$)/i.test(part))) {
+    return url;
+  }
+
+  const nextSegments = /^v\d+$/i.test(first) || !looksLikeCloudinaryTransformation(first)
+    ? [cloudName, resourceType, deliveryType, 'fl_attachment', ...rest]
+    : [cloudName, resourceType, deliveryType, `fl_attachment,${first}`, ...remaining];
+
+  parsed.pathname = `/${nextSegments.join('/')}`;
+  return parsed.toString();
+};
+
 const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
@@ -95,6 +131,7 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
     const url = `${process.env.SERVER_URL || `http://localhost:${port}`}/uploads/${req.file.filename}`;
     return res.json({
       url,
+      downloadUrl: url,
       filename: req.file.originalname,
       mimetype: req.file.mimetype,
       size: req.file.size,
@@ -118,6 +155,7 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
         }
         return res.json({
           url: result.secure_url,
+          downloadUrl: toCloudinaryAttachmentUrl(result.secure_url),
           filename: req.file.originalname,
           mimetype: req.file.mimetype,
           size: req.file.size,
