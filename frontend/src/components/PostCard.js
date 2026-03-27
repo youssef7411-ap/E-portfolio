@@ -205,6 +205,15 @@ function PostCard({ post, variants }) {
                     <span className="pc-file-size">{formatBytes(file.size)}</span>
                   )}
                   <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost btn-sm pc-preview-btn"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    👁 Preview
+                  </a>
+                  <a
                     href={toDownloadUrl(url)}
                     download={name}
                     className="btn btn-ghost btn-sm pc-download-btn"

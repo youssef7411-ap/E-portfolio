@@ -166,6 +166,14 @@
 .pc-file-name { flex: 1; font-size: 0.875rem; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-file-size { font-size: 0.75rem; color: var(--text-3); }
 
+@media (max-width: 480px) {
+  .pc-file-item { flex-wrap: wrap; gap: 0.5rem; }
+  .pc-file-name { flex-basis: 100%; white-space: normal; }
+  .pc-file-size { order: 3; }
+  .pc-preview-btn { order: 4; }
+  .pc-download-btn { order: 5; }
+}
+
 /* Lightbox */
 .pc-lightbox {
   position: fixed;
