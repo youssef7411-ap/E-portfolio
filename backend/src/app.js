@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
+import fileRoutes from './routes/files.js';
 import subjectRoutes from './routes/subjects.js';
 import postRoutes from './routes/posts.js';
 import visitorRoutes from './routes/visitors.js';
@@ -111,6 +112,7 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/files', fileRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/visitors', visitorRoutes);

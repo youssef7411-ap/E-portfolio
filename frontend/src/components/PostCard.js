@@ -3,6 +3,7 @@ import DOMPurify from 'dompurify';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import JSZip from 'jszip';
 import '../styles/PostCard.css';
+import { API_URL } from '../config/api';
 
 const FILE_ICONS = {
   pdf: '📄', doc: '📝', docx: '📝', txt: '📃',
@@ -53,6 +54,10 @@ function triggerDownload(href, filename) {
 
 function toDownloadUrl(url) {
   return url; // Direct URL for R2/local storage
+}
+
+function isCloudinaryUrl(value) {
+  return /(^|\/\/)res\.cloudinary\.com\//i.test(String(value || ''));
 }
 
 function getUploadTimestamp(file) {
@@ -139,7 +144,11 @@ function handlePreview(file) {
     return;
   }
 
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const finalUrl = isCloudinaryUrl(url)
+    ? `${API_URL}/api/files/preview?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`
+    : url;
+
+  window.open(finalUrl, '_blank', 'noopener,noreferrer');
 }
 
 function PostCard({ post, variants }) {
@@ -250,8 +259,16 @@ function PostCard({ post, variants }) {
   const handleFileDownload = async (e, file, index) => {
     e.stopPropagation();
     const name = file?.name || file?.file_name || `File ${index + 1}`;
-    const url = toDownloadUrl(file?.downloadUrl || file?.url);
+    const rawUrl = file?.downloadUrl || file?.url;
+    const url = toDownloadUrl(rawUrl);
     if (!url || downloadingFile === url) return;
+
+    if (isCloudinaryUrl(url)) {
+      const finalUrl = `${API_URL}/api/files/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`;
+      window.open(finalUrl, '_blank', 'noopener,noreferrer');
+      markViewed(file, index);
+      return;
+    }
 
     markViewed(file, index);
     setDownloadingFile(url);
