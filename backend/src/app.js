@@ -79,6 +79,17 @@ app.get('/health', (req, res) => {
 app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
+  const rawOriginal = String(req.file.originalname || '');
+  const safeOriginal = path.basename(rawOriginal)
+    .replace(/\0/g, '')
+    .replace(/[^\w.\- ()]+/g, '_')
+    .slice(0, 120) || 'upload';
+  const ext = path.extname(safeOriginal).slice(1).toLowerCase();
+  const blockedExt = new Set(['exe', 'msi', 'dmg', 'pkg', 'app', 'dll', 'so', 'dylib', 'p12', 'pfx', 'pem', 'key', 'crt', 'cer', 'der', 'keystore']);
+  if (blockedExt.has(ext)) {
+    return res.status(400).json({ message: 'Blocked file type.' });
+  }
+
   if (!hasObjectStorageConfig()) {
     const port = process.env.PORT || 5002;
     const inferredBaseUrl = `${req.protocol}://${req.get('host')}`;
@@ -95,13 +106,13 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
 
   uploadBufferToObjectStorage({
     buffer: req.file.buffer,
-    originalName: req.file.originalname,
+    originalName: safeOriginal,
     mimetype: req.file.mimetype,
   })
     .then((result) => res.json({
       url: result.url,
       downloadUrl: result.downloadUrl,
-      filename: req.file.originalname,
+      filename: safeOriginal,
       mimetype: req.file.mimetype,
       size: req.file.size,
     }))

@@ -33,6 +33,31 @@ const langBadge = name => {
   return CODE_LANGS[ext] || null;
 };
 
+const ALLOWED_FOLDER_EXTENSIONS = new Set([
+  'js', 'jsx', 'ts', 'tsx', 'vue',
+  'py', 'java', 'c', 'cpp', 'h', 'hpp', 'cs', 'go', 'rb', 'php',
+  'html', 'htm', 'css', 'scss', 'less',
+  'json', 'xml', 'md', 'txt', 'yml', 'yaml',
+  'sql', 'sh', 'bat',
+  'gitignore', 'dockerignore',
+  'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp',
+  'pdf',
+]);
+
+const BLOCKED_FOLDER_EXTENSIONS = new Set([
+  'exe', 'msi', 'dmg', 'pkg', 'app',
+  'dll', 'so', 'dylib',
+  'bin', 'iso', 'img',
+  'p12', 'pfx', 'pem', 'key', 'crt', 'cer', 'der', 'keystore',
+]);
+
+const IGNORED_FOLDER_NAMES = new Set([
+  'node_modules', '.git', '.next', 'dist', 'build', 'coverage', '.turbo', '.cache',
+]);
+
+const MAX_FOLDER_FILES = 2000;
+const MAX_FOLDER_TOTAL_BYTES = 250 * 1024 * 1024;
+
 const EMPTY_FORM = {
   title: '', description: '', subject_id: '', semester: '', grade: '',
   type: 'note', files: [], images: [], videos: [], published: true,
@@ -48,19 +73,130 @@ const QUILL_MODULES = {
   ],
 };
 
-const buildFolderZipFile = async files => {
+const sanitizeZipPath = (value) => {
+  const raw = String(value || '').replace(/\\/g, '/').trim();
+  const withoutLeading = raw.replace(/^([a-zA-Z]:)?\/+/, '');
+  const parts = withoutLeading.split('/').filter(Boolean);
+  if (parts.some((p) => p === '.' || p === '..')) return '';
+  return parts.join('/');
+};
+
+const getExtension = (name) => {
+  const base = String(name || '').split('/').pop() || '';
+  if (base.startsWith('.') && !base.includes('.', 1)) return base.slice(1).toLowerCase();
+  const ext = base.split('.').pop() || '';
+  return ext.toLowerCase();
+};
+
+const validateFolderFiles = (files) => {
+  const errors = [];
+  const kept = [];
+  let totalBytes = 0;
+
+  if (files.length > MAX_FOLDER_FILES) {
+    errors.push(`Too many files (${files.length}). Max is ${MAX_FOLDER_FILES}.`);
+    return { ok: false, errors, kept: [] };
+  }
+
+  for (const f of files) {
+    const rel = sanitizeZipPath(f.webkitRelativePath || f.name || '');
+    if (!rel) continue;
+    const top = rel.split('/')[0];
+    if (IGNORED_FOLDER_NAMES.has(top)) continue;
+
+    const ext = getExtension(rel);
+    if (BLOCKED_FOLDER_EXTENSIONS.has(ext)) {
+      errors.push(`Blocked file type: .${ext}`);
+      continue;
+    }
+
+    const isAllowed = ALLOWED_FOLDER_EXTENSIONS.has(ext);
+    if (!isAllowed) {
+      continue;
+    }
+
+    totalBytes += Number(f.size || 0);
+    kept.push({ file: f, rel });
+  }
+
+  if (!kept.length) {
+    errors.push('No valid files found in the selected folder.');
+    return { ok: false, errors, kept: [] };
+  }
+
+  if (totalBytes > MAX_FOLDER_TOTAL_BYTES) {
+    errors.push(`Folder is too large (${formatBytes(totalBytes)}). Max is ${formatBytes(MAX_FOLDER_TOTAL_BYTES)}.`);
+    return { ok: false, errors, kept: [] };
+  }
+
+  const uniqueErrors = [...new Set(errors)].slice(0, 6);
+  return { ok: uniqueErrors.length === 0, errors: uniqueErrors, kept };
+};
+
+const uploadSingleFileWithProgress = ({ file, token, onProgress }) => {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_URL}/api/upload`, true);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.upload.onprogress = (evt) => {
+      if (!evt.lengthComputable) return;
+      const percent = Math.round((evt.loaded / evt.total) * 100);
+      if (onProgress) onProgress(percent);
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText || '{}');
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(data);
+        } else {
+          reject(new Error(data.message || `Upload failed (${xhr.status})`));
+        }
+      } catch {
+        reject(new Error('Upload failed'));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send(fd);
+  });
+};
+
+const buildFolderZipFile = async (files, onProgress) => {
   if (!files.length) return null;
   const zip = new JSZip();
   const firstPath = files[0]?.webkitRelativePath || '';
-  const rootFolder = firstPath.split('/')[0] || 'folder-upload';
+  const rootFolder = sanitizeZipPath(firstPath).split('/')[0] || 'folder-upload';
 
-  for (const file of files) {
-    const relativePath = (file.webkitRelativePath || file.name || 'file').replace(/\\/g, '/');
-    const data = await file.arrayBuffer();
-    zip.file(relativePath, data);
+  const validation = validateFolderFiles(files);
+  if (!validation.ok) {
+    const message = validation.errors.join(' ');
+    throw new Error(message);
   }
 
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const kept = validation.kept;
+  for (let i = 0; i < kept.length; i += 1) {
+    const { file, rel } = kept[i];
+    zip.file(rel, file);
+    if (onProgress) {
+      onProgress({ stage: 'packing', percent: Math.round(((i + 1) / kept.length) * 25) });
+    }
+  }
+
+  const zipBlob = await zip.generateAsync(
+    { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+    (meta) => {
+      if (onProgress) {
+        const pct = 25 + Math.round((meta.percent || 0) * 0.75);
+        onProgress({ stage: 'compressing', percent: Math.min(100, Math.max(0, pct)) });
+      }
+    },
+  );
+
   return new File([zipBlob], `${rootFolder}.zip`, { type: 'application/zip' });
 };
 
@@ -112,6 +248,8 @@ export default function PostManagement() {
   const [uploading, setUploading] = useState(false);
   const [lowQuality, setLowQuality] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -176,6 +314,8 @@ export default function PostManagement() {
     const { preserveStructure = false } = options;
     if (!files.length) return;
     setUploadError('');
+    setUploadStatus('Uploading...');
+    setUploadPercent(0);
     setUploading(true);
     const token = localStorage.getItem('adminToken');
 
@@ -230,6 +370,8 @@ export default function PostManagement() {
       }
     }
     setUploading(false);
+    setUploadStatus('');
+    setUploadPercent(0);
   };
 
   const handleFileUpload = async e => {
@@ -242,9 +384,45 @@ export default function PostManagement() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    const zipFile = await buildFolderZipFile(files);
-    if (zipFile) {
-      await uploadSelectedFiles([zipFile], { preserveStructure: true });
+    setUploadError('');
+    setUploadStatus('Preparing folder...');
+    setUploadPercent(0);
+    setUploading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const zipFile = await buildFolderZipFile(files, ({ stage, percent }) => {
+        setUploadStatus(stage === 'packing' ? 'Packing files...' : 'Compressing folder...');
+        setUploadPercent(percent || 0);
+      });
+      if (zipFile) {
+        setUploadStatus('Uploading ZIP...');
+        setUploadPercent(0);
+        const data = await uploadSingleFileWithProgress({
+          file: zipFile,
+          token,
+          onProgress: (p) => setUploadPercent(p),
+        });
+
+        if (data.url) {
+          const displayName = zipFile.name;
+          setFormData(prev => ({
+            ...prev,
+            files: [...prev.files, {
+              name: displayName,
+              url: data.url,
+              downloadUrl: data.downloadUrl || data.url,
+              mimetype: data.mimetype || 'application/zip',
+              size: data.size || zipFile.size || 0,
+            }],
+          }));
+        }
+      }
+    } catch (err) {
+      setUploadError(err?.message || 'Folder upload failed.');
+    } finally {
+      setUploading(false);
+      setUploadStatus('');
+      setUploadPercent(0);
     }
     if (folderInputRef.current) folderInputRef.current.value = '';
   };
@@ -580,7 +758,18 @@ export default function PostManagement() {
                     </label>
                   </div>
 
-                  {uploading && <div className="pm-upload-progress"><span className="spinner" /> Uploading...</div>}
+                  {uploading && (
+                    <div className="pm-upload-progress">
+                      <div className="pm-upload-progress-row">
+                        <span className="spinner" />
+                        <span className="pm-upload-progress-text">{uploadStatus || 'Uploading...'}</span>
+                        <span className="pm-upload-progress-pct">{uploadPercent ? `${uploadPercent}%` : ''}</span>
+                      </div>
+                      <div className="pm-progress-bar" aria-hidden="true">
+                        <div className="pm-progress-fill" style={{ width: `${uploadPercent || 0}%` }} />
+                      </div>
+                    </div>
+                  )}
                   {uploadError && <div style={{ color: 'var(--danger)', marginTop: '0.5rem' }}>{uploadError}</div>}
 
                   {formData.images.length > 0 && (
