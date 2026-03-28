@@ -76,12 +76,20 @@ export const buildPublicObjectUrl = (key) => {
 
 export const uploadBufferToCloudinary = (buffer, originalName, mimetype) => {
   return new Promise((resolve, reject) => {
+    const safeExt = path.extname(originalName).slice(1).toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const safeBase = path.parse(originalName).name.replace(/[^\w.\- ()]+/g, '_').slice(0, 80) || 'upload';
+    const resourceType = String(mimetype || '').startsWith('image/')
+      ? 'image'
+      : String(mimetype || '').startsWith('video/')
+        ? 'video'
+        : 'raw';
+
     const stream = cloudinary.uploader.upload_stream(
       {
-        resource_type: 'auto',
+        resource_type: resourceType,
         folder: 'e-portfolio',
-        public_id: path.parse(originalName).name + '-' + Date.now(),
-        format: path.extname(originalName).slice(1),
+        public_id: `${safeBase}-${Date.now()}`,
+        ...(safeExt ? { format: safeExt } : {}),
       },
       (error, result) => {
         if (error) reject(error);

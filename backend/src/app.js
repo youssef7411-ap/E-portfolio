@@ -118,7 +118,8 @@ app.post('/api/upload', authenticate, upload.single('file'), (req, res) => {
     }))
     .catch((error) => {
       console.error('Upload failed:', error);
-      res.status(500).json({ message: 'Upload failed' });
+      const message = String(error?.message || 'Upload failed').slice(0, 200);
+      res.status(500).json({ message });
     });
 });
 
