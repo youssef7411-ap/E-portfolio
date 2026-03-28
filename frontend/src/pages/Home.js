@@ -36,7 +36,6 @@ function Home({ darkMode, setDarkMode }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subjectSearch, setSubjectSearch] = useState('');
-  const [subjectFilter, setSubjectFilter] = useState('all'); // all | projects | attachments
   const [subjectSort, setSubjectSort] = useState('order'); // order | name | recent
   const [subjectView, setSubjectView] = useState('grid'); // grid | list
   const navigate = useNavigate();
@@ -113,15 +112,6 @@ function Home({ darkMode, setDarkMode }) {
       );
     }
 
-    if (subjectFilter !== 'all') {
-      list = list.filter((sub) => {
-        const meta = subjectMeta.get(String(sub?._id)) || { projectCount: 0, attachmentCount: 0 };
-        return subjectFilter === 'projects'
-          ? meta.projectCount > 0
-          : meta.attachmentCount > 0;
-      });
-    }
-
     list = [...list].sort((a, b) => {
       if (subjectSort === 'name') {
         return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
@@ -142,7 +132,7 @@ function Home({ darkMode, setDarkMode }) {
     });
 
     return list;
-  }, [subjects, subjectSearch, subjectFilter, subjectSort, subjectMeta]);
+  }, [subjects, subjectSearch, subjectSort, subjectMeta]);
 
   return (
     <div className="home">
@@ -288,12 +278,6 @@ function Home({ darkMode, setDarkMode }) {
               </div>
 
               <div className="subjects-controls">
-                <select className="subjects-select" value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
-                  <option value="all">Filter: All</option>
-                  <option value="projects">Filter: Projects</option>
-                  <option value="attachments">Filter: Attachments</option>
-                </select>
-
                 <select className="subjects-select" value={subjectSort} onChange={(e) => setSubjectSort(e.target.value)}>
                   <option value="order">Sort: Custom</option>
                   <option value="recent">Sort: Recent</option>

@@ -60,6 +60,89 @@ function isCloudinaryUrl(value) {
   return /(^|\/\/)res\.cloudinary\.com\//i.test(String(value || ''));
 }
 
+function rewriteLocalhostUploadUrl(value) {
+  if (!API_URL) return null;
+  try {
+    const u = new URL(String(value));
+    const isLocal = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    if (!isLocal) return null;
+    if (!u.pathname.startsWith('/uploads/')) return null;
+    return `${API_URL}${u.pathname}`;
+  } catch {
+    return null;
+  }
+}
+
+function getDownloadTarget(rawUrl, name) {
+  const url = String(rawUrl || '').trim();
+  if (!url) {
+    return { kind: 'blocked', reason: 'Missing file URL.' };
+  }
+
+  const rewritten = rewriteLocalhostUploadUrl(url);
+  if (rewritten) {
+    return { kind: 'direct', url: rewritten };
+  }
+
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(url)) {
+    return {
+      kind: 'blocked',
+      reason: 'This file link points to localhost and is not available online. Please re-upload it.',
+    };
+  }
+
+  if (isCloudinaryUrl(url)) {
+    return {
+      kind: 'proxy',
+      url: `${API_URL}/api/files/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`,
+    };
+  }
+
+  if (/^http:\/\//i.test(url)) {
+    return {
+      kind: 'proxy',
+      url: `${API_URL}/api/files/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`,
+    };
+  }
+
+  return { kind: 'direct', url };
+}
+
+function getPreviewTarget(rawUrl, name) {
+  const url = String(rawUrl || '').trim();
+  if (!url) {
+    return { kind: 'blocked', reason: 'Missing file URL.' };
+  }
+
+  const rewritten = rewriteLocalhostUploadUrl(url);
+  if (rewritten) {
+    return { kind: 'direct', url: rewritten };
+  }
+
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(url)) {
+    return {
+      kind: 'blocked',
+      reason: 'This file link points to localhost and is not available online. Please re-upload it.',
+    };
+  }
+
+  if (isCloudinaryUrl(url)) {
+    return {
+      kind: 'proxy',
+      url: `${API_URL}/api/files/preview?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`,
+    };
+  }
+
+  if (/^http:\/\//i.test(url)) {
+    return {
+      kind: 'proxy',
+      url: `${API_URL}/api/files/preview?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`,
+    };
+  }
+
+  return { kind: 'direct', url };
+}
+
 function isPreviewableInline(file) {
   const name = String(file?.name || file?.file_name || '').toLowerCase();
   const url = String(file?.url || file?.downloadUrl || '').toLowerCase();
@@ -127,11 +210,13 @@ function handlePreview(file) {
     return;
   }
 
-  const finalUrl = isCloudinaryUrl(url)
-    ? `${API_URL}/api/files/preview?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`
-    : url;
+  const target = getPreviewTarget(url, name);
+  if (target.kind === 'blocked') {
+    openInfoTab({ title: 'Preview not available', message: target.reason });
+    return;
+  }
 
-  window.open(finalUrl, '_blank', 'noopener,noreferrer');
+  window.open(target.url, '_blank', 'noopener,noreferrer');
 }
 
 function PostCard({ post, variants }) {
@@ -168,7 +253,11 @@ function PostCard({ post, variants }) {
         const name = file?.name || `file-${i + 1}`;
         const url = file?.downloadUrl || file?.url;
         if (!url) continue;
-        const response = await fetch(toDownloadUrl(url));
+        const rewritten = rewriteLocalhostUploadUrl(url);
+        if (!rewritten && /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/)/i.test(String(url))) {
+          throw new Error('Localhost file links cannot be downloaded online. Please re-upload.');
+        }
+        const response = await fetch(toDownloadUrl(rewritten || url));
         if (!response.ok) continue;
         const blob = await response.blob();
         zip.file(normalizeZipPath(name, `file-${i + 1}`), blob);
@@ -184,7 +273,10 @@ function PostCard({ post, variants }) {
       a.remove();
       URL.revokeObjectURL(href);
     } catch (err) {
-      console.error('Folder zip download failed:', err);
+      openInfoTab({
+        title: 'Download not available',
+        message: err?.message || 'Folder download failed. Please try again.',
+      });
     } finally {
       setZipping(false);
     }
@@ -194,14 +286,19 @@ function PostCard({ post, variants }) {
     e.stopPropagation();
     const name = file?.name || file?.file_name || `File ${index + 1}`;
     const rawUrl = file?.downloadUrl || file?.url;
-    const url = toDownloadUrl(rawUrl);
-    if (!url || downloadingFile === url) return;
-
-    if (isCloudinaryUrl(url)) {
-      const finalUrl = `${API_URL}/api/files/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`;
-      window.open(finalUrl, '_blank', 'noopener,noreferrer');
+    const target = getDownloadTarget(rawUrl, name);
+    if (target.kind === 'blocked') {
+      openInfoTab({ title: 'Download not available', message: target.reason });
       return;
     }
+
+    if (target.kind === 'proxy') {
+      window.open(target.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    const url = toDownloadUrl(target.url);
+    if (!url || downloadingFile === url) return;
 
     setDownloadingFile(url);
     try {
