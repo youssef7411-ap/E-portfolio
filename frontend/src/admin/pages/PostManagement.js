@@ -197,8 +197,9 @@ const uploadSingleFileWithProgress = ({ file, token, onProgress }) => {
   });
 };
 
-const buildFolderZipFile = async (files, onProgress) => {
+const buildFolderZipFile = async (files, onProgress, options = {}) => {
   if (!files.length) return null;
+  const { lowQuality = false } = options;
   const zip = new JSZip();
   const firstPath = files[0]?.webkitRelativePath || '';
   const rootFolder = sanitizeZipPath(firstPath).split('/')[0] || 'folder-upload';
@@ -212,7 +213,19 @@ const buildFolderZipFile = async (files, onProgress) => {
   const kept = validation.kept;
   for (let i = 0; i < kept.length; i += 1) {
     const { file, rel } = kept[i];
-    zip.file(rel, file);
+    const ext = getExtension(rel);
+    const isCompressibleImage = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp'].includes(ext);
+    if (lowQuality && isCompressibleImage) {
+      const compressed = await compressImage(file, 0.35);
+      if (compressed && compressed.size && compressed.size < (file.size || 0)) {
+        const outRel = rel.replace(/\.[^/.]+$/, '') + '.jpg';
+        zip.file(outRel, compressed);
+      } else {
+        zip.file(rel, file);
+      }
+    } else {
+      zip.file(rel, file);
+    }
     if (onProgress) {
       onProgress({ stage: 'packing', percent: Math.round(((i + 1) / kept.length) * 25) });
     }
@@ -255,7 +268,10 @@ const compressImage = (file, quality = 0.4) => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         canvas.toBlob((blob) => {
-          resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          if (!blob) return resolve(file);
+          const base = String(file?.name || 'image').replace(/\.[^/.]+$/, '');
+          const outName = `${base}.jpg`;
+          resolve(new File([blob], outName, { type: 'image/jpeg' }));
         }, 'image/jpeg', quality);
       };
       img.src = e.target.result;
@@ -268,6 +284,9 @@ const getFileKind = (file) => {
   const type = file.type || '';
   if (type.startsWith('image/')) return 'image';
   if (type.startsWith('video/')) return 'video';
+  const ext = getExtension(file?.name || '');
+  if (['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp', 'gif', 'svg'].includes(ext)) return 'image';
+  if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'ogg'].includes(ext)) return 'video';
   return 'file';
 };
 
@@ -354,11 +373,13 @@ export default function PostManagement() {
 
     for (let file of files) {
       const kind = getFileKind(file);
-      
-      // Apply compression if it's an image and lowQuality is enabled
+
       if (kind === 'image' && lowQuality) {
         try {
-          file = await compressImage(file, 0.4);
+          const compressed = await compressImage(file, 0.35);
+          if (compressed && compressed.size && compressed.size < (file.size || 0)) {
+            file = compressed;
+          }
         } catch (err) {
           console.error('Compression failed:', err);
         }
@@ -426,7 +447,7 @@ export default function PostManagement() {
       const zipFile = await buildFolderZipFile(files, ({ stage, percent }) => {
         setUploadStatus(stage === 'packing' ? 'Packing files...' : 'Compressing folder...');
         setUploadPercent(percent || 0);
-      });
+      }, { lowQuality });
       if (zipFile) {
         setUploadStatus('Uploading ZIP...');
         setUploadPercent(0);
