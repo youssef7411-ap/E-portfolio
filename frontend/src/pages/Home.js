@@ -35,9 +35,6 @@ function Home({ darkMode, setDarkMode }) {
   const [subjects, setSubjects] = useState([]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [subjectSearch, setSubjectSearch] = useState('');
-  const [subjectSort, setSubjectSort] = useState('order'); // order | name | recent
-  const [subjectView, setSubjectView] = useState('grid'); // grid | list
   const navigate = useNavigate();
   const subjectsSectionRef = useRef(null);
 
@@ -101,38 +98,14 @@ function Home({ darkMode, setDarkMode }) {
     return map;
   }, [posts]);
 
-  const filteredSubjects = useMemo(() => {
-    const s = subjectSearch.trim().toLowerCase();
-    let list = subjects;
-
-    if (s) {
-      list = list.filter((sub) =>
-        String(sub?.name || '').toLowerCase().includes(s)
-        || String(sub?.description || '').toLowerCase().includes(s)
-      );
-    }
-
-    list = [...list].sort((a, b) => {
-      if (subjectSort === 'name') {
-        return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
-      }
-      if (subjectSort === 'recent') {
-        const aMeta = subjectMeta.get(String(a?._id));
-        const bMeta = subjectMeta.get(String(b?._id));
-        const tA = Math.max(new Date(a?.updatedAt || a?.createdAt || 0).getTime(), aMeta?.lastUpdated || 0);
-        const tB = Math.max(new Date(b?.updatedAt || b?.createdAt || 0).getTime(), bMeta?.lastUpdated || 0);
-        return tB - tA;
-      }
-      if (subjectSort === 'order') {
-        const oA = Number(a?.order || 0);
-        const oB = Number(b?.order || 0);
-        if (oA !== oB) return oA - oB;
-      }
+  const sortedSubjects = useMemo(() => {
+    return [...subjects].sort((a, b) => {
+      const oA = Number(a?.order || 0);
+      const oB = Number(b?.order || 0);
+      if (oA !== oB) return oA - oB;
       return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
     });
-
-    return list;
-  }, [subjects, subjectSearch, subjectSort, subjectMeta]);
+  }, [subjects]);
 
   return (
     <div className="home">
@@ -262,65 +235,25 @@ function Home({ darkMode, setDarkMode }) {
           >
             <div className="home-section-head">
               <h3>All Subjects</h3>
-              <span>{filteredSubjects.length} shown</span>
-            </div>
-
-            <div className="subjects-toolbar">
-              <div className="subjects-search">
-                <span className="subjects-search-icon">🔎</span>
-                <input
-                  className="subjects-search-input"
-                  value={subjectSearch}
-                  onChange={(e) => setSubjectSearch(e.target.value)}
-                  placeholder="Search subjects..."
-                  type="text"
-                />
-              </div>
-
-              <div className="subjects-controls">
-                <select className="subjects-select" value={subjectSort} onChange={(e) => setSubjectSort(e.target.value)}>
-                  <option value="order">Sort: Custom</option>
-                  <option value="recent">Sort: Recent</option>
-                  <option value="name">Sort: Name</option>
-                </select>
-
-                <div className="subjects-view" role="group" aria-label="Subject view">
-                  <button
-                    type="button"
-                    className={`subjects-view-btn ${subjectView === 'grid' ? 'active' : ''}`}
-                    onClick={() => setSubjectView('grid')}
-                    title="Grid view"
-                  >
-                    ⬚⬚
-                  </button>
-                  <button
-                    type="button"
-                    className={`subjects-view-btn ${subjectView === 'list' ? 'active' : ''}`}
-                    onClick={() => setSubjectView('list')}
-                    title="List view"
-                  >
-                    ≡
-                  </button>
-                </div>
-              </div>
+              <span>{sortedSubjects.length} shown</span>
             </div>
 
             {loading ? (
               <div className="spinner" />
-            ) : filteredSubjects.length === 0 ? (
+            ) : sortedSubjects.length === 0 ? (
               <p className="empty-state">No subjects available yet.</p>
             ) : (
               <motion.div
-                className={`subjects-grid ${subjectView === 'list' ? 'subjects-grid--list' : ''}`}
+                className="subjects-grid"
                 variants={containerVariants}
                 initial={prefersReducedMotion ? false : 'hidden'}
                 animate={prefersReducedMotion ? undefined : 'visible'}
               >
-                {filteredSubjects.map((subject) => (
+                {sortedSubjects.map((subject) => (
                   <SubjectCard
                     key={subject._id}
                     subject={subject}
-                    variant={subjectView}
+                    variant="grid"
                     meta={subjectMeta.get(String(subject._id)) || { postCount: 0, projectCount: 0 }}
                     onClick={() => navigate(`/subject/${subject._id}`)}
                   />

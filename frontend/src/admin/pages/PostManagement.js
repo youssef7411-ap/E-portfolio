@@ -58,9 +58,40 @@ const IGNORED_FOLDER_NAMES = new Set([
 const MAX_FOLDER_FILES = 2000;
 const MAX_FOLDER_TOTAL_BYTES = 250 * 1024 * 1024;
 
+const SEMESTER_OPTIONS = [
+  { value: 'first', label: 'First Semester' },
+  { value: 'second', label: 'Second Semester' },
+  { value: 'third', label: 'Third Semester' },
+];
+
+const GRADE_OPTIONS = Array.from({ length: 12 }, (_, i) => {
+  const value = String(i + 1);
+  return { value, label: `Grade ${value}` };
+});
+
 const EMPTY_FORM = {
   title: '', description: '', subject_id: '', semester: '', grade: '',
   type: 'note', files: [], images: [], videos: [], published: true,
+};
+
+const normalizeSemester = (value) => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return '';
+  const token = raw.replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+  if (token === 'first' || token === '1' || token === '1st') return 'first';
+  if (token === 'second' || token === '2' || token === '2nd') return 'second';
+  if (token === 'third' || token === '3' || token === '3rd') return 'third';
+  return '';
+};
+
+const normalizeGrade = (value) => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const match = raw.match(/\d{1,2}/);
+  if (!match) return '';
+  const n = Number(match[0]);
+  if (!Number.isInteger(n) || n < 1 || n > 12) return '';
+  return String(n);
 };
 
 const QUILL_MODULES = {
@@ -257,6 +288,7 @@ export default function PostManagement() {
   // Filters
   const [filterSubject, setFilterSubject] = useState('');
   const [filterSemester, setFilterSemester] = useState('');
+  const [filterGrade, setFilterGrade] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterType, setFilterType] = useState('');
 
@@ -303,12 +335,13 @@ export default function PostManagement() {
     return posts.filter(post => {
       const sid = post.subject_id?._id || post.subject_id || '';
       if (filterSubject && sid !== filterSubject) return false;
-      if (filterSemester && post.semester !== filterSemester) return false;
+      if (filterSemester && normalizeSemester(post.semester) !== filterSemester) return false;
+      if (filterGrade && normalizeGrade(post.grade) !== filterGrade) return false;
       if (filterStatus && String(post.published) !== filterStatus) return false;
       if (filterType && post.type !== filterType) return false;
       return true;
     });
-  }, [posts, filterSubject, filterSemester, filterStatus, filterType]);
+  }, [posts, filterSubject, filterSemester, filterGrade, filterStatus, filterType]);
 
   const uploadSelectedFiles = async (files, options = {}) => {
     const { preserveStructure = false } = options;
@@ -435,12 +468,14 @@ export default function PostManagement() {
 
   const openEditModal = post => {
     setEditingId(post._id);
+    const semester = normalizeSemester(post.semester) || String(post.semester || '').trim();
+    const grade = normalizeGrade(post.grade) || String(post.grade || '').trim();
     setFormData({
       title: post.title || '',
       description: post.description || '',
       subject_id: post.subject_id?._id || post.subject_id || '',
-      semester: post.semester || '',
-      grade: post.grade || '',
+      semester,
+      grade,
       type: post.type || 'note',
       files: post.files || [],
       images: post.images || [],
@@ -466,6 +501,24 @@ export default function PostManagement() {
   };
 
   const handleSave = async () => {
+    const title = String(formData.title || '').trim();
+    if (!title) {
+      window.alert('Title is required.');
+      return;
+    }
+    if (!String(formData.subject_id || '').trim()) {
+      window.alert('Subject is required.');
+      return;
+    }
+    if (!String(formData.semester || '').trim()) {
+      window.alert('Semester is required.');
+      return;
+    }
+    if (!String(formData.grade || '').trim()) {
+      window.alert('Grade is required.');
+      return;
+    }
+
     setSaving(true);
     const token = localStorage.getItem('adminToken');
     const url = editingId
@@ -477,14 +530,18 @@ export default function PostManagement() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, title }),
       });
       if (res.ok) {
         closeModal();
         fetchData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        window.alert(data?.message || 'Failed to save post');
       }
     } catch (err) {
       console.error('Save post error:', err);
+      window.alert('Network error while saving post');
     }
     setSaving(false);
   };
@@ -557,11 +614,16 @@ export default function PostManagement() {
         </select>
         <select value={filterSemester} onChange={e => setFilterSemester(e.target.value)}>
           <option value="">All Semesters</option>
-          {[...new Set(posts.map(p => p.semester))].filter(Boolean).map(s => <option key={s} value={s}>{s}</option>)}
+          {SEMESTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)}>
+          <option value="">All Grades</option>
+          {GRADE_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
         </select>
         <select value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="">All Types</option>
           <option value="note">Note</option>
+          <option value="summary">Summary</option>
           <option value="assignment">Assignment</option>
           <option value="project">Project</option>
           <option value="exam">Exam</option>
@@ -689,6 +751,7 @@ export default function PostManagement() {
                       <label>Type</label>
                       <select name="type" value={formData.type} onChange={handleFormChange}>
                         <option value="note">Note</option>
+                        <option value="summary">Summary</option>
                         <option value="assignment">Assignment</option>
                         <option value="project">Project</option>
                         <option value="exam">Exam</option>
@@ -699,11 +762,23 @@ export default function PostManagement() {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Semester</label>
-                      <input name="semester" value={formData.semester} onChange={handleFormChange} placeholder="e.g., Fall 2024" />
+                      <select name="semester" value={formData.semester} onChange={handleFormChange}>
+                        {!!formData.semester && !SEMESTER_OPTIONS.some(s => s.value === formData.semester) && (
+                          <option value={formData.semester}>{formData.semester}</option>
+                        )}
+                        <option value="">Select semester</option>
+                        {SEMESTER_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </select>
                     </div>
                     <div className="form-group">
                       <label>Grade</label>
-                      <input name="grade" value={formData.grade} onChange={handleFormChange} placeholder="e.g., A+" />
+                      <select name="grade" value={formData.grade} onChange={handleFormChange}>
+                        {!!formData.grade && !GRADE_OPTIONS.some(g => g.value === formData.grade) && (
+                          <option value={formData.grade}>{formData.grade}</option>
+                        )}
+                        <option value="">Select grade</option>
+                        {GRADE_OPTIONS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                      </select>
                     </div>
                   </div>
                 </section>
