@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+const SEMESTERS = ['first', 'second', 'third'];
+const GRADES = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const POST_TYPES = ['note', 'summary', 'assignment', 'project', 'exam', 'other'];
+
 const postSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -25,15 +29,17 @@ const postSchema = new mongoose.Schema({
   },
   semester: {
     type: String,
-    default: ''
+    enum: SEMESTERS,
+    required: true
   },
   grade: {
     type: String,
-    default: ''
+    enum: GRADES,
+    required: true
   },
   type: {
     type: String,
-    enum: ['note', 'assignment', 'project', 'exam', 'other'],
+    enum: POST_TYPES,
     default: 'note'
   },
   files: [
