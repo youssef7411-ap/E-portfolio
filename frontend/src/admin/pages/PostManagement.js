@@ -216,13 +216,9 @@ const buildFolderZipFile = async (files, onProgress, options = {}) => {
     const ext = getExtension(rel);
     const isCompressibleImage = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'bmp'].includes(ext);
     if (lowQuality && isCompressibleImage) {
-      const compressed = await compressImage(file, 0.35);
-      if (compressed && compressed.size && compressed.size < (file.size || 0)) {
-        const outRel = rel.replace(/\.[^/.]+$/, '') + '.jpg';
-        zip.file(outRel, compressed);
-      } else {
-        zip.file(rel, file);
-      }
+      const compressed = await compressImage(file, { mode: 'low' });
+      const outRel = rel.replace(/\.[^/.]+$/, '') + '.jpg';
+      zip.file(outRel, compressed);
     } else {
       zip.file(rel, file);
     }
@@ -244,7 +240,10 @@ const buildFolderZipFile = async (files, onProgress, options = {}) => {
   return new File([zipBlob], `${rootFolder}.zip`, { type: 'application/zip' });
 };
 
-const compressImage = (file, quality = 0.4) => {
+const compressImage = (file, options = {}) => {
+  const { mode = 'low' } = options;
+  const quality = mode === 'high' ? 0.92 : 0.35;
+  const maxDim = mode === 'high' ? 2400 : 1200;
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -253,7 +252,6 @@ const compressImage = (file, quality = 0.4) => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = 1200;
         if (width > maxDim || height > maxDim) {
           if (width > height) {
             height *= maxDim / width;
@@ -376,10 +374,7 @@ export default function PostManagement() {
 
       if (kind === 'image' && lowQuality) {
         try {
-          const compressed = await compressImage(file, 0.35);
-          if (compressed && compressed.size && compressed.size < (file.size || 0)) {
-            file = compressed;
-          }
+          file = await compressImage(file, { mode: 'low' });
         } catch (err) {
           console.error('Compression failed:', err);
         }
