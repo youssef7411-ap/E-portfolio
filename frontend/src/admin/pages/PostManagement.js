@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import 'react-quill/dist/quill.snow.css';
 import '../../styles/PostManagement.css';
 import { API_URL } from '../../config/api';
+import { htmlToPlainText, plainTextToQuillHtml } from '../utils/aiText';
 
 const UPLOAD_FILE_ICONS = {
   pdf: '📄', doc: '📝', docx: '📝', txt: '📃',
@@ -304,6 +305,13 @@ export default function PostManagement() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [linkTitle, setLinkTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [aiSuggestionHtml, setAiSuggestionHtml] = useState('');
+  const [aiOriginalHtml, setAiOriginalHtml] = useState('');
+  const [aiSuggestOpen, setAiSuggestOpen] = useState(false);
+  const aiLastClickAtRef = useRef(0);
+  const aiAbortRef = useRef(null);
 
   // Filters
   const [filterSubject, setFilterSubject] = useState('');
@@ -555,6 +563,15 @@ export default function PostManagement() {
     setModalOpen(false);
     setEditingId(null);
     setUploadError('');
+    setAiError('');
+    setAiLoading(false);
+    setAiSuggestionHtml('');
+    setAiOriginalHtml('');
+    setAiSuggestOpen(false);
+    if (aiAbortRef.current) {
+      try { aiAbortRef.current.abort(); } catch {}
+      aiAbortRef.current = null;
+    }
   };
 
   const handleFormChange = e => {
@@ -564,6 +581,78 @@ export default function PostManagement() {
 
   const handleQuillChange = value => {
     setFormData(prev => ({ ...prev, description: value }));
+  };
+
+  const requestAiDescription = async ({ mode, title, description }) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      window.location.href = '/admin/login';
+      return null;
+    }
+    if (aiAbortRef.current) {
+      try { aiAbortRef.current.abort(); } catch {}
+    }
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+    const t = setTimeout(() => controller.abort(), 12_000);
+    try {
+      const res = await fetch(`${API_URL}/api/ai/description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ mode, title, description }),
+        signal: controller.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, message: data?.message || 'AI request failed' };
+      }
+      return { ok: true, text: String(data?.text || '').trim() };
+    } catch (e) {
+      if (e?.name === 'AbortError') return { ok: false, message: 'AI request timed out.' };
+      return { ok: false, message: 'Network error while contacting AI.' };
+    } finally {
+      clearTimeout(t);
+      if (aiAbortRef.current === controller) aiAbortRef.current = null;
+    }
+  };
+
+  const handleAiClick = async () => {
+    const now = Date.now();
+    if (aiLoading) return;
+    if (now - aiLastClickAtRef.current < 900) return;
+    aiLastClickAtRef.current = now;
+
+    setAiError('');
+    setAiSuggestOpen(false);
+    setAiSuggestionHtml('');
+    setAiOriginalHtml('');
+    setAiLoading(true);
+
+    const title = String(formData.title || '').trim();
+    const currentHtml = String(formData.description || '').trim();
+    const currentText = htmlToPlainText(currentHtml);
+    const mode = currentText ? 'improve' : 'generate';
+
+    if (mode === 'generate' && !title) {
+      setAiLoading(false);
+      setAiError('Add a title first so AI can generate a description.');
+      return;
+    }
+
+    const result = await requestAiDescription({ mode, title, description: currentText });
+    setAiLoading(false);
+    if (!result?.ok) {
+      setAiError(result?.message || 'AI request failed');
+      return;
+    }
+    const suggested = plainTextToQuillHtml(result.text);
+    if (!suggested) {
+      setAiError('AI returned an empty response.');
+      return;
+    }
+    setAiOriginalHtml(currentHtml);
+    setAiSuggestionHtml(suggested);
+    setAiSuggestOpen(true);
   };
 
   const handleSave = async () => {
@@ -792,13 +881,72 @@ export default function PostManagement() {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Description</label>
-                    <ReactQuill
-                      theme="snow"
-                      value={formData.description}
-                      onChange={handleQuillChange}
-                      modules={QUILL_MODULES}
-                    />
+                    <div className="pm-desc-head">
+                      <label>Description</label>
+                      <button
+                        type="button"
+                        className={`pm-ai-btn ${aiLoading ? 'loading' : ''}`}
+                        onClick={handleAiClick}
+                        aria-label="AI enhance description"
+                        disabled={aiLoading}
+                      >
+                        AI
+                      </button>
+                    </div>
+                    <div className="pm-desc-wrap">
+                      <ReactQuill
+                        theme="snow"
+                        value={formData.description}
+                        onChange={handleQuillChange}
+                        modules={QUILL_MODULES}
+                      />
+                      {aiLoading && (
+                        <div className="pm-ai-overlay" aria-live="polite">
+                          <div className="pm-ai-shadow">Generating…</div>
+                        </div>
+                      )}
+                    </div>
+                    {aiError && (
+                      <div className="pm-ai-error" role="alert">{aiError}</div>
+                    )}
+                    <AnimatePresence>
+                      {aiSuggestOpen && (
+                        <motion.div
+                          className="pm-ai-suggest glass"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 8 }}
+                          transition={{ duration: 0.22 }}
+                        >
+                          <div className="pm-ai-suggest-head">
+                            <div className="pm-ai-suggest-title">AI Suggestion</div>
+                            <div className="pm-ai-suggest-actions">
+                              <button
+                                type="button"
+                                className="pm-ai-action"
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, description: aiSuggestionHtml }));
+                                  setAiSuggestOpen(false);
+                                }}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                type="button"
+                                className="pm-ai-action secondary"
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, description: aiOriginalHtml }));
+                                  setAiSuggestOpen(false);
+                                }}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                          <div className="pm-ai-suggest-body" dangerouslySetInnerHTML={{ __html: aiSuggestionHtml }} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </section>
 

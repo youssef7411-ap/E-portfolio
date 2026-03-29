@@ -549,6 +549,133 @@
   transition: width 0.2s ease;
 }
 
+.pm-desc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pm-ai-btn {
+  height: 34px;
+  min-width: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--accent);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pm-ai-btn:hover:not(:disabled) {
+  background: rgba(251, 191, 36, 0.18);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.pm-ai-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.pm-desc-wrap {
+  position: relative;
+}
+
+.pm-ai-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.05), rgba(255, 255, 255, 0.03), rgba(251, 191, 36, 0.05));
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: pmAiOverlayPulse 1.2s ease-in-out infinite;
+}
+
+.pm-ai-shadow {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(251, 191, 36, 0.8);
+  text-shadow: 0 10px 30px rgba(251, 191, 36, 0.25);
+  filter: blur(0.2px);
+}
+
+@keyframes pmAiOverlayPulse {
+  0% { opacity: 0.45; }
+  50% { opacity: 0.75; }
+  100% { opacity: 0.45; }
+}
+
+.pm-ai-error {
+  margin-top: 0.5rem;
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.pm-ai-suggest {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.pm-ai-suggest-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pm-ai-suggest-title {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.pm-ai-suggest-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pm-ai-action {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--accent);
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pm-ai-action:hover {
+  background: rgba(251, 191, 36, 0.18);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.pm-ai-action.secondary {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+  color: var(--text-2);
+}
+
+.pm-ai-action.secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pm-ai-suggest-body {
+  color: var(--text-2);
+}
+
 /* Fancy Checkbox */
 .pm-checkbox-fancy label {
   display: flex;
