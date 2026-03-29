@@ -191,7 +191,8 @@
   color: var(--text-2);
 }
 
-.form-group input, .form-group select {
+.form-group input,
+.form-group select {
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -202,7 +203,8 @@
   transition: all 0.2s ease;
 }
 
-.form-group input:focus, .form-group select:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
 }
@@ -236,6 +238,111 @@
   border-color: var(--accent);
   background: rgba(251, 191, 36, 0.05);
   transform: translateY(-2px);
+}
+
+.pm-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pm-dropzone:hover {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.pm-dropzone.active {
+  border-color: var(--accent);
+  background: rgba(251, 191, 36, 0.08);
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.12);
+}
+
+.pm-dropzone-title {
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pm-dropzone-sub {
+  font-size: 0.875rem;
+  color: var(--text-3);
+}
+
+.pm-links-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.pm-link-add {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--accent);
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pm-link-add:hover {
+  background: rgba(251, 191, 36, 0.18);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.pm-links-list {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pm-link-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pm-link-a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-link-a:hover {
+  color: var(--accent);
+}
+
+.pm-link-remove {
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-3);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pm-link-remove:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger);
 }
 
 .pm-upload-btn-fancy .icon {
@@ -378,10 +485,24 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-.pm-file-item-fancy .icon { font-size: 1.25rem; }
-.pm-file-item-fancy .file-info { flex: 1; min-width: 0; }
-.pm-file-item-fancy .name { font-size: 0.875rem; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-file-item-fancy .meta { font-size: 0.75rem; color: var(--text-3); }
+.pm-file-item-fancy .icon {
+  font-size: 1.25rem;
+}
+.pm-file-item-fancy .file-info {
+  flex: 1;
+  min-width: 0;
+}
+.pm-file-item-fancy .name {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-file-item-fancy .meta {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
 
 .pm-upload-progress {
   margin-top: 0.75rem;
@@ -446,7 +567,9 @@
   border-color: rgba(251, 191, 36, 0.3);
 }
 
-.pm-checkbox-fancy input { display: none; }
+.pm-checkbox-fancy input {
+  display: none;
+}
 
 .pm-checkbox-fancy .custom-check {
   width: 1.5rem;
@@ -478,7 +601,17 @@
 
 /* Responsive */
 @media (max-width: 640px) {
-  .pm-modal { border-radius: 0; max-height: 100vh; }
-  .form-row { grid-template-columns: 1fr; gap: 1rem; }
-  .pm-modal-header, .pm-modal-body, .pm-modal-footer { padding: 1.25rem; }
+  .pm-modal {
+    border-radius: 0;
+    max-height: 100vh;
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .pm-modal-header,
+  .pm-modal-body,
+  .pm-modal-footer {
+    padding: 1.25rem;
+  }
 }

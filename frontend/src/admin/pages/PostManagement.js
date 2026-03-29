@@ -71,7 +71,7 @@ const GRADE_OPTIONS = Array.from({ length: 12 }, (_, i) => {
 
 const EMPTY_FORM = {
   title: '', description: '', subject_id: '', semester: '', grade: '',
-  type: 'note', files: [], images: [], videos: [], published: true,
+  type: 'note', files: [], images: [], videos: [], links: [], published: true,
 };
 
 const normalizeSemester = (value) => {
@@ -298,9 +298,12 @@ export default function PostManagement() {
   const [uploadError, setUploadError] = useState('');
   const [uploadStatus, setUploadStatus] = useState('');
   const [uploadPercent, setUploadPercent] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
 
   // Filters
   const [filterSubject, setFilterSubject] = useState('');
@@ -364,13 +367,16 @@ export default function PostManagement() {
     const { preserveStructure = false } = options;
     if (!files.length) return;
     setUploadError('');
-    setUploadStatus('Uploading...');
     setUploadPercent(0);
     setUploading(true);
     const token = localStorage.getItem('adminToken');
 
-    for (let file of files) {
+    for (let i = 0; i < files.length; i += 1) {
+      let file = files[i];
       const kind = getFileKind(file);
+
+      setUploadStatus(`Uploading ${i + 1}/${files.length}: ${file.name || 'file'}`);
+      setUploadPercent(0);
 
       if (kind === 'image' && lowQuality) {
         try {
@@ -379,21 +385,13 @@ export default function PostManagement() {
           console.error('Compression failed:', err);
         }
       }
-
-      const fd = new FormData();
-      fd.append('file', file);
       
       try {
-        const res = await fetch(`${API_URL}/api/upload`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: fd,
+        const data = await uploadSingleFileWithProgress({
+          file,
+          token,
+          onProgress: (p) => setUploadPercent(p),
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setUploadError(data.message || `Upload failed for ${file.name}`);
-          continue;
-        }
         if (data.url) {
           const displayName = file.webkitRelativePath || data.filename || file.name;
           if (preserveStructure || kind === 'file') {
@@ -415,12 +413,61 @@ export default function PostManagement() {
         }
       } catch (err) {
         console.error('Upload error:', err);
-        setUploadError(`Network error while uploading ${file.name}`);
+        setUploadError(err?.message || `Network error while uploading ${file.name}`);
       }
     }
     setUploading(false);
     setUploadStatus('');
     setUploadPercent(0);
+  };
+
+  const normalizeLinkUrl = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const withProto = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw) ? raw : `https://${raw}`;
+    try {
+      const u = new URL(withProto);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+      return u.toString();
+    } catch {
+      return '';
+    }
+  };
+
+  const addLink = ({ title, url }) => {
+    const normalized = normalizeLinkUrl(url);
+    if (!normalized) {
+      window.alert('Please enter a valid website link.');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      links: [...(Array.isArray(prev.links) ? prev.links : []), { title: String(title || '').trim(), url: normalized }],
+    }));
+  };
+
+  const removeLink = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      links: (Array.isArray(prev.links) ? prev.links : []).filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setDragActive(false);
+
+    const dt = e.dataTransfer;
+    const droppedFiles = Array.from(dt?.files || []);
+    if (droppedFiles.length) {
+      await uploadSelectedFiles(droppedFiles);
+      return;
+    }
+
+    const rawUrl = String(dt?.getData('text/uri-list') || dt?.getData('text/plain') || '').trim();
+    if (rawUrl) {
+      addLink({ title: '', url: rawUrl.split('\n')[0] });
+    }
   };
 
   const handleFileUpload = async e => {
@@ -496,8 +543,11 @@ export default function PostManagement() {
       files: post.files || [],
       images: post.images || [],
       videos: post.videos || [],
+      links: Array.isArray(post.links) ? post.links : [],
       published: post.published !== false,
     });
+    setLinkTitle('');
+    setLinkUrl('');
     setModalOpen(true);
   };
 
@@ -830,6 +880,23 @@ export default function PostManagement() {
                     </div>
                   </div>
 
+                  <div
+                    className={`pm-dropzone ${dragActive ? 'active' : ''}`}
+                    onDragEnter={(e) => { e.preventDefault(); setDragActive(true); }}
+                    onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                    onDragLeave={(e) => { e.preventDefault(); setDragActive(false); }}
+                    onDrop={handleDrop}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <div className="pm-dropzone-title">Drag & drop files here</div>
+                    <div className="pm-dropzone-sub">Or click to pick files. You can also drop a website link.</div>
+                  </div>
+
                   <div className="pm-upload-buttons">
                     <label className="pm-upload-btn-fancy">
                       <span className="icon">📄</span>
@@ -862,6 +929,48 @@ export default function PostManagement() {
                     </div>
                   )}
                   {uploadError && <div style={{ color: 'var(--danger)', marginTop: '0.5rem' }}>{uploadError}</div>}
+
+                  <div className="pm-asset-group">
+                    <label>Website Links</label>
+                    <div className="pm-links-row">
+                      <input
+                        className="pm-link-title"
+                        value={linkTitle}
+                        onChange={(e) => setLinkTitle(e.target.value)}
+                        placeholder="Title (optional)"
+                      />
+                      <input
+                        className="pm-link-url"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                        placeholder="https://example.com"
+                      />
+                      <button
+                        type="button"
+                        className="pm-link-add"
+                        onClick={() => {
+                          addLink({ title: linkTitle, url: linkUrl });
+                          setLinkTitle('');
+                          setLinkUrl('');
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {(Array.isArray(formData.links) ? formData.links : []).length > 0 && (
+                      <div className="pm-links-list">
+                        {(Array.isArray(formData.links) ? formData.links : []).map((l, i) => (
+                          <div key={`${l?.url || ''}-${i}`} className="pm-link-item">
+                            <a className="pm-link-a" href={l?.url} target="_blank" rel="noopener noreferrer">
+                              {l?.title ? String(l.title) : String(l?.url || '')}
+                            </a>
+                            <button type="button" className="pm-link-remove" onClick={() => removeLink(i)}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {formData.images.length > 0 && (
                     <div className="pm-asset-group">

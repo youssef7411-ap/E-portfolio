@@ -36,6 +36,30 @@ const normalizeGrade = (value) => {
 
 const normalizeType = (value) => asNonEmptyString(value).toLowerCase();
 
+const normalizeLinkUrl = (value) => {
+  const raw = asNonEmptyString(value);
+  if (!raw) return '';
+  const withProto = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw) ? raw : `https://${raw}`;
+  try {
+    const u = new URL(withProto);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+    return u.toString();
+  } catch {
+    return '';
+  }
+};
+
+const sanitizeLinks = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => ({
+      title: asNonEmptyString(v?.title).slice(0, 120),
+      url: normalizeLinkUrl(v?.url),
+    }))
+    .filter((v) => v.url)
+    .slice(0, 40);
+};
+
 const ensureDefaultSubjectId = async () => {
   const subject = await Subject.findOneAndUpdate(
     { name: 'General' },
@@ -153,6 +177,7 @@ router.post('/', authenticate, async (req, res) => {
     const files = Array.isArray(req.body?.files) ? req.body.files : [];
     const images = Array.isArray(req.body?.images) ? req.body.images : [];
     const videos = Array.isArray(req.body?.videos) ? req.body.videos : [];
+    const links = sanitizeLinks(req.body?.links);
     const published = req.body?.published !== undefined ? Boolean(req.body.published) : true;
 
     if (!title) {
@@ -196,6 +221,7 @@ router.post('/', authenticate, async (req, res) => {
       files,
       images,
       videos,
+      links,
       published,
     });
     await post.save();
@@ -239,6 +265,10 @@ router.put('/:id', authenticate, async (req, res) => {
       if (!type) return res.status(400).json({ message: 'Type is required.' });
       if (!POST_TYPES.has(type)) return res.status(400).json({ message: 'Type is invalid.' });
       req.body.type = type;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'links')) {
+      req.body.links = sanitizeLinks(req.body.links);
     }
 
     if (Object.prototype.hasOwnProperty.call(req.body, 'content')) {
