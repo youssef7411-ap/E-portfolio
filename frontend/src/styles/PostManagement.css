@@ -280,6 +280,30 @@
   align-items: center;
 }
 
+.pm-link-title,
+.pm-link-url {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.pm-link-title::placeholder,
+.pm-link-url::placeholder {
+  color: var(--text-3);
+}
+
+.pm-link-title:focus,
+.pm-link-url:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
+}
+
 .pm-link-add {
   height: 44px;
   padding: 0 16px;
@@ -735,6 +759,12 @@
   .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+  .pm-links-row {
+    grid-template-columns: 1fr;
+  }
+  .pm-link-add {
+    width: 100%;
   }
   .pm-modal-header,
   .pm-modal-body,
