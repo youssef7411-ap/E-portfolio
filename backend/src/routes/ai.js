@@ -17,6 +17,11 @@ const withTimeout = async (promiseFactory, ms) => {
  
 const normalizeText = (value, maxLen) => asString(value).replace(/\s+/g, ' ').slice(0, maxLen);
  
+router.get('/status', authenticate, (req, res) => {
+  const enabled = Boolean(asString(process.env.OPENAI_API_KEY));
+  res.json({ enabled });
+});
+
 const buildPrompt = ({ mode, title, description }) => {
   if (mode === 'generate') {
     return [

@@ -305,6 +305,7 @@ export default function PostManagement() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [linkTitle, setLinkTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [aiEnabled, setAiEnabled] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [aiSuggestionHtml, setAiSuggestionHtml] = useState('');
@@ -335,12 +336,17 @@ export default function PostManagement() {
         return;
       }
 
-      const [postsRes, subjectsRes] = await Promise.all([
+      const [postsRes, subjectsRes, aiStatusRes] = await Promise.all([
         fetch(`${API_URL}/api/posts/admin/all`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/subjects`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/ai/status`, { headers: { 'Authorization': `Bearer ${token}` } }),
       ]);
 
-      if (postsRes.status === 401 || postsRes.status === 403 || subjectsRes.status === 401 || subjectsRes.status === 403) {
+      if (
+        postsRes.status === 401 || postsRes.status === 403
+        || subjectsRes.status === 401 || subjectsRes.status === 403
+        || aiStatusRes.status === 401 || aiStatusRes.status === 403
+      ) {
         localStorage.removeItem('adminToken');
         window.location.href = '/admin/login';
         return;
@@ -350,10 +356,14 @@ export default function PostManagement() {
       const subjectsData = subjectsRes.ok ? await subjectsRes.json() : [];
       setPosts(Array.isArray(postsData) ? postsData : []);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+
+      const aiStatus = aiStatusRes.ok ? await aiStatusRes.json().catch(() => null) : null;
+      setAiEnabled(Boolean(aiStatus?.enabled));
     } catch (err) {
       console.error('PostManagement fetchData:', err);
       setPosts([]);
       setSubjects([]);
+      setAiEnabled(false);
     } finally {
       setLoading(false);
     }
@@ -622,6 +632,7 @@ export default function PostManagement() {
     if (now - aiLastClickAtRef.current < 900) return;
     aiLastClickAtRef.current = now;
 
+    if (!aiEnabled) return;
     setAiError('');
     setAiSuggestOpen(false);
     setAiSuggestionHtml('');
@@ -883,15 +894,17 @@ export default function PostManagement() {
                   <div className="form-group">
                     <div className="pm-desc-head">
                       <label>Description</label>
-                      <button
-                        type="button"
-                        className={`pm-ai-btn ${aiLoading ? 'loading' : ''}`}
-                        onClick={handleAiClick}
-                        aria-label="AI enhance description"
-                        disabled={aiLoading}
-                      >
-                        AI
-                      </button>
+                      {aiEnabled && (
+                        <button
+                          type="button"
+                          className={`pm-ai-btn ${aiLoading ? 'loading' : ''}`}
+                          onClick={handleAiClick}
+                          aria-label="AI enhance description"
+                          disabled={aiLoading}
+                        >
+                          AI
+                        </button>
+                      )}
                     </div>
                     <div className="pm-desc-wrap">
                       <ReactQuill
