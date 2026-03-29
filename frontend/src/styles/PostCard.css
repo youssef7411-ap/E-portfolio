@@ -104,6 +104,13 @@
   gap: 0.75rem;
 }
 
+.pc-img-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
 .pc-img-btn {
   border: none;
   padding: 0;
@@ -112,6 +119,8 @@
   border-radius: var(--radius);
   overflow: hidden;
   aspect-ratio: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .pc-img-thumb {
@@ -123,6 +132,76 @@
 
 .pc-img-btn:hover .pc-img-thumb {
   transform: scale(1.1);
+}
+
+.pc-img-download {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pc-img-download:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.6);
+  border-color: rgba(251, 191, 36, 0.35);
+  transform: translateY(-1px);
+}
+
+.pc-img-download:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Links */
+.pc-link-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pc-link-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+}
+
+.pc-link-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pc-link-a {
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pc-link-item:hover .pc-link-a {
+  color: var(--accent);
+}
+
+.pc-link-icon {
+  color: var(--text-3);
+  font-weight: 900;
 }
 
 /* Video */
@@ -272,4 +351,40 @@
 .pc-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: rotate(90deg);
+}
+
+.pc-lightbox-actions {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.pc-lightbox-actions .pc-lightbox-close {
+  position: static;
+  top: auto;
+  right: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+}
+
+.pc-lightbox-btn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pc-lightbox-btn:hover {
+  border-color: rgba(251, 191, 36, 0.35);
+  background: rgba(0, 0, 0, 0.5);
 }

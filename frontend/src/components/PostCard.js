@@ -223,6 +223,7 @@ function PostCard({ post, variants }) {
   const [imgExpanded, setImgExpanded] = useState(null);
   const [zipping, setZipping] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState('');
+  const [downloadingImage, setDownloadingImage] = useState('');
   const reduceMotion = useReducedMotion();
 
   const safeHTML = DOMPurify.sanitize(post.description || '');
@@ -231,6 +232,7 @@ function PostCard({ post, variants }) {
   const allFiles = useMemo(() => (Array.isArray(post?.files) ? post.files : []), [post?.files]);
   const images = useMemo(() => (Array.isArray(post?.images) ? post.images : []), [post?.images]);
   const videos = useMemo(() => (Array.isArray(post?.videos) ? post.videos : []), [post?.videos]);
+  const links = useMemo(() => (Array.isArray(post?.links) ? post.links : []), [post?.links]);
   const hasFolderStructure = allFiles.some(f => (f?.name || '').includes('/'));
 
   const tags = [
@@ -323,6 +325,56 @@ function PostCard({ post, variants }) {
     }
   };
 
+  const filenameFromUrl = (rawUrl, fallback) => {
+    const url = String(rawUrl || '').trim();
+    if (!url) return fallback;
+    try {
+      const u = new URL(url);
+      const last = (u.pathname || '').split('/').filter(Boolean).pop() || '';
+      return decodeURIComponent(last) || fallback;
+    } catch {
+      const last = url.split('?')[0].split('#')[0].split('/').pop() || '';
+      return last || fallback;
+    }
+  };
+
+  const handleImageDownload = async (e, rawUrl, index) => {
+    e.stopPropagation();
+    const name = filenameFromUrl(rawUrl, `image-${index + 1}.jpg`);
+    const target = getDownloadTarget(rawUrl, name);
+    if (target.kind === 'blocked') {
+      openInfoTab({ title: 'Download not available', message: target.reason });
+      return;
+    }
+
+    if (target.kind === 'proxy') {
+      window.open(target.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    const url = toDownloadUrl(target.url);
+    if (!url || downloadingImage === url) return;
+
+    setDownloadingImage(url);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed with status ${response.status}`);
+      }
+      const blob = await response.blob();
+      if (!blob.size) {
+        throw new Error('Download returned an empty file');
+      }
+      const href = URL.createObjectURL(blob);
+      triggerDownload(href, name);
+      URL.revokeObjectURL(href);
+    } catch {
+      triggerDownload(url, name);
+    } finally {
+      setDownloadingImage('');
+    }
+  };
+
   return (
     <motion.article
       className="pc card"
@@ -348,15 +400,46 @@ function PostCard({ post, variants }) {
         />
       )}
 
+      {/* ── Links ── */}
+      {links.length > 0 && (
+        <section className="pc-media-section">
+          <h4 className="pc-section-label">🔗 Links</h4>
+          <ul className="pc-link-list">
+            {links
+              .map((l) => ({ title: String(l?.title || '').trim(), url: String(l?.url || '').trim() }))
+              .filter((l) => /^https?:\/\//i.test(l.url))
+              .map((l, i) => (
+                <li key={`${l.url}-${i}`} className="pc-link-item">
+                  <a className="pc-link-a" href={l.url} target="_blank" rel="noopener noreferrer">
+                    {l.title || l.url}
+                  </a>
+                  <span className="pc-link-icon" aria-hidden="true">↗</span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
       {/* ── Images ── */}
       {images.length > 0 && (
         <section className="pc-media-section">
           <h4 className="pc-section-label">📸 Images</h4>
           <div className="pc-image-grid">
             {images.map((url, i) => (
-              <button key={i} className="pc-img-btn" onClick={() => setImgExpanded(url)}>
-                <img src={url} alt={`Attachment ${i + 1}`} loading="lazy" className="pc-img-thumb" />
-              </button>
+              <div key={i} className="pc-img-wrap">
+                <button type="button" className="pc-img-btn" onClick={() => setImgExpanded(url)} aria-label={`Open image ${i + 1}`}>
+                  <img src={url} alt={`Attachment ${i + 1}`} loading="lazy" className="pc-img-thumb" />
+                </button>
+                <button
+                  type="button"
+                  className="pc-img-download"
+                  onClick={(e) => handleImageDownload(e, url, i)}
+                  aria-label={`Download image ${i + 1}`}
+                  disabled={downloadingImage === toDownloadUrl(url)}
+                >
+                  ⬇
+                </button>
+              </div>
             ))}
           </div>
         </section>
@@ -445,9 +528,19 @@ function PostCard({ post, variants }) {
 
       {/* ── Lightbox ── */}
       {imgExpanded && (
-        <div className="pc-lightbox" onClick={() => setImgExpanded(null)}>
+        <div className="pc-lightbox" onClick={() => setImgExpanded(null)} role="dialog" aria-label="Image preview">
           <img src={imgExpanded} alt="Expanded" className="pc-lightbox-img" />
-          <button className="pc-lightbox-close">✕</button>
+          <div className="pc-lightbox-actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="pc-lightbox-btn"
+              onClick={(e) => handleImageDownload(e, imgExpanded, 0)}
+              aria-label="Download image"
+            >
+              ⬇ Download
+            </button>
+            <button type="button" className="pc-lightbox-close" onClick={() => setImgExpanded(null)} aria-label="Close image preview">✕</button>
+          </div>
         </div>
       )}
     </motion.article>
