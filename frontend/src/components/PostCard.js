@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import JSZip from 'jszip';
 import '../styles/PostCard.css';
 import { API_URL } from '../config/api';
+import { filenameFromUrl, normalizeLinks } from '../utils/postMedia';
 
 const FILE_ICONS = {
   pdf: '📄', doc: '📝', docx: '📝', txt: '📃',
@@ -325,19 +326,6 @@ function PostCard({ post, variants }) {
     }
   };
 
-  const filenameFromUrl = (rawUrl, fallback) => {
-    const url = String(rawUrl || '').trim();
-    if (!url) return fallback;
-    try {
-      const u = new URL(url);
-      const last = (u.pathname || '').split('/').filter(Boolean).pop() || '';
-      return decodeURIComponent(last) || fallback;
-    } catch {
-      const last = url.split('?')[0].split('#')[0].split('/').pop() || '';
-      return last || fallback;
-    }
-  };
-
   const handleImageDownload = async (e, rawUrl, index) => {
     e.stopPropagation();
     const name = filenameFromUrl(rawUrl, `image-${index + 1}.jpg`);
@@ -405,10 +393,7 @@ function PostCard({ post, variants }) {
         <section className="pc-media-section">
           <h4 className="pc-section-label">🔗 Links</h4>
           <ul className="pc-link-list">
-            {links
-              .map((l) => ({ title: String(l?.title || '').trim(), url: String(l?.url || '').trim() }))
-              .filter((l) => /^https?:\/\//i.test(l.url))
-              .map((l, i) => (
+            {normalizeLinks(links).map((l, i) => (
                 <li key={`${l.url}-${i}`} className="pc-link-item">
                   <a className="pc-link-a" href={l.url} target="_blank" rel="noopener noreferrer">
                     {l.title || l.url}
