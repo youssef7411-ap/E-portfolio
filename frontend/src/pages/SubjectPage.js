@@ -110,8 +110,9 @@ function SubjectPage({ darkMode, setDarkMode }) {
       list = list.filter(p => String(p?.type || '').trim().toLowerCase() === filterType);
     }
     list.sort((a, b) => {
-      const tA = new Date(a.updatedAt || a.date_created).getTime();
-      const tB = new Date(b.updatedAt || b.date_created).getTime();
+      // Sort by publish date (date_created) descending. Editing does not affect order.
+      const tA = new Date(a.date_created).getTime();
+      const tB = new Date(b.date_created).getTime();
       return tB - tA;
     });
     return list;
