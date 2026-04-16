@@ -23,5 +23,8 @@
   "license": "PRIVATE",
   "devDependencies": {
     "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
   }
 }
