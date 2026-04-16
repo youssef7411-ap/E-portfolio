@@ -3,6 +3,80 @@ import crypto from 'crypto';
 import path from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import multer from 'multer';
+import sharp from 'sharp';
+import { uploadBufferToObjectStorage } from '../utils/objectStorage.js';
+// Multer setup for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max
+  fileFilter: (req, file, cb) => {
+    // Accept images, videos, pdf, docx, zip
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/quicktime',
+      'application/pdf',
+      'application/zip',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Invalid file type'));
+  },
+});
+
+// POST /api/files/upload
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    const { buffer, originalname, mimetype, size } = req.file;
+    // Security: basic check for double extensions
+    if ((originalname.match(/\./g) || []).length > 1) {
+      return res.status(400).json({ message: 'Suspicious file name' });
+    }
+    // Optional: compress images
+    let uploadBuffer = buffer;
+    let thumbBuffer = null;
+    let thumbUrl = null;
+    if (mimetype.startsWith('image/')) {
+      // Compress main image
+      uploadBuffer = await sharp(buffer)
+        .resize({ width: 1920, withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      // Generate thumbnail
+      thumbBuffer = await sharp(buffer)
+        .resize({ width: 320 })
+        .jpeg({ quality: 60 })
+        .toBuffer();
+    }
+    // Upload main file
+    const uploadResult = await uploadBufferToObjectStorage({
+      buffer: uploadBuffer,
+      originalName: originalname,
+      mimetype,
+    });
+    // Upload thumbnail if image
+    if (thumbBuffer) {
+      const thumbResult = await uploadBufferToObjectStorage({
+        buffer: thumbBuffer,
+        originalName: 'thumb-' + originalname,
+        mimetype: 'image/jpeg',
+      });
+      thumbUrl = thumbResult.url;
+    }
+    // TODO: Save file metadata to DB (if model exists)
+    res.json({
+      url: uploadResult.url,
+      downloadUrl: uploadResult.downloadUrl,
+      thumbUrl,
+      size: uploadBuffer.length,
+      originalName: originalname,
+      mimetype,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message || 'Upload failed' });
+  }
+});
  
 const cloudinary = await import('cloudinary').then(m => m.v2);
  
