@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -17,6 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use(compression());
 app.set('trust proxy', 1);
 
 const uploadsDir = path.join(__dirname, '../../uploads');
