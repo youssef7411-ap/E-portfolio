@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-
 import SubjectManagement from './pages/SubjectManagement';
 import PostManagement from './pages/PostManagement';
 import Dashboard from './pages/Dashboard';
-import Emailing from './pages/Emailing';
 import AdminCrashGuard from '../components/AdminCrashGuard';
 import '../styles/Admin.css';
 
@@ -11,7 +10,6 @@ const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/admin' },
   { id: 'subjects', label: 'Subjects', icon: '📂', path: '/admin/subjects' },
   { id: 'posts', label: 'Posts', icon: '📝', path: '/admin/posts' },
-  { id: 'emailing', label: 'Emailing', icon: '✉️', path: '/admin/emailing' },
 ];
 
 function AdminDashboard({ setIsAdmin }) {
@@ -109,7 +107,6 @@ function AdminDashboard({ setIsAdmin }) {
               <Route index element={<Dashboard />} />
               <Route path="subjects" element={<SubjectManagement />} />
               <Route path="posts" element={<PostManagement />} />
-              <Route path="emailing" element={<Emailing />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </AdminCrashGuard>

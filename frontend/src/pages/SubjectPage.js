@@ -98,6 +98,12 @@ function SubjectPage({ darkMode, setDarkMode }) {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  useEffect(() => {
+    if (subject?.name) {
+      document.title = `${subject.name} - Youssef's E-Portfolio`;
+    }
+  }, [subject]);
+
   const filtered = useMemo(() => {
     let list = [...posts];
     if (filterGrade) {
@@ -253,9 +259,9 @@ function SubjectPage({ darkMode, setDarkMode }) {
         <main className="sp-posts" aria-label="Posts list">
           {filtered.length === 0 ? (
             <div className="sp-empty glass">
-              <div className="empty-icon">📂</div>
-              <h3>No posts found</h3>
-              <p>No posts are published under this subject yet.</p>
+              <div className="empty-icon">📚</div>
+              <h3>Coming Soon</h3>
+              <p>No posts are published under this subject yet. Check back later!</p>
             </div>
           ) : animateList ? (
             <motion.div

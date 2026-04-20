@@ -240,7 +240,7 @@ function Home() {
       })
       .filter((subject) => subject.postCount > 0)
       .sort((a, b) => b.postCount - a.postCount || b.projectCount - a.projectCount)
-      .slice(0, 5);
+      .slice(0, 3);
 
     const maxPosts = Math.max(1, ...items.map((item) => item.postCount));
     return items.map((item) => ({
@@ -313,7 +313,7 @@ function Home() {
               animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
               transition={prefersReducedMotion ? undefined : { duration: 0.45, delay: 0.08 }}
             >
-              My E-Portfolio
+              Hi, I'm Youssef
             </motion.h1>
             <motion.p
               className="home-subtitle"
@@ -321,14 +321,14 @@ function Home() {
               animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
               transition={prefersReducedMotion ? undefined : { duration: 0.35, delay: 0.12 }}
             >
-              Live dashboard for uploads, posts, and portfolio activity
+              Grade 9 student · Academic Portfolio
             </motion.p>
           </motion.div>
 
           <div className="header-right">
             <div className="header-status-pill">
               <span className="header-status-dot" />
-              {loading ? 'Syncing data' : `${uploadsThisMonth} uploads this month`}
+              {loading ? 'Syncing' : `${posts.length} posts`}
             </div>
           </div>
         </div>
@@ -345,10 +345,10 @@ function Home() {
             <div className="dashboard-intro">
               <span className="dashboard-kicker">Portfolio Command Center</span>
               <motion.h2 className="hero-headline">
-                Open the site and <span className="handwritten-accent">understand</span> the work in seconds.
+                Explore my academic work
               </motion.h2>
               <motion.p className="hero-copy">
-                Recent uploads, total posts, subject activity, and content mix now appear instantly on the main page so the portfolio feels more professional, data-driven, and polished from the first click.
+                Browse subjects, projects, and assignments. See recent uploads, total posts, subject activity, and content mix all in one place.
               </motion.p>
 
               <div className="dashboard-pill-row">
