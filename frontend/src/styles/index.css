@@ -67,6 +67,29 @@
   /* Typography */
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Legacy variable support */
+  --text: var(--text-main);
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] {
+  --bg: #0f172a;               /* Dark Slate 900 */
+  --surface: #1e293b;          /* Dark Slate 800 */
+  --surface-hover: #334155;    /* Dark Slate 700 */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  
+  --text-main: #f8fafc;        /* Slate 50 */
+  --text-secondary: #cbd5e1;   /* Slate 300 */
+  --text-muted: #64748b;       /* Slate 500 */
+  
+  --primary-light: rgba(59, 130, 246, 0.15);
+  
+  .glass {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 }
 
 /* Base Resets & Global Styles */

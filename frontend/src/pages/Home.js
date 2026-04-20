@@ -150,13 +150,6 @@ function Home() {
     }
   }, [subjectQuery]);
 
-  // eslint-disable-next-line no-use-before-define
-  const subjectsCount = useCountUp(sortedSubjects.length, 1000);
-  // eslint-disable-next-line no-use-before-define
-  const projectsCount = useCountUp(totalProjects, 1100);
-  // eslint-disable-next-line no-use-before-define
-  const mediaCount = useCountUp(totalAssets, 1300);
-
   const subjectMeta = useMemo(() => {
     const map = new Map();
 
@@ -199,6 +192,10 @@ function Home() {
 
   const totalProjects = useMemo(() => posts.filter((post) => post?.type === 'project').length, [posts]);
   const totalAssets = useMemo(() => posts.reduce((sum, post) => sum + getAssetCount(post), 0), [posts]);
+
+  const subjectsCount = useCountUp(sortedSubjects.length, 1000);
+  const projectsCount = useCountUp(totalProjects, 1100);
+  const mediaCount = useCountUp(totalAssets, 1300);
 
   const overviewStats = [
     {

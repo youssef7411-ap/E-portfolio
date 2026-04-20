@@ -5,17 +5,28 @@ import App from './App';
 
 function Root() {
   const [mounted, setMounted] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    const isDark = saved !== null ? saved === 'true' : true;
+    // Set initial theme immediately
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    return isDark;
+  });
 
   useEffect(() => {
     setMounted(true);
-    document.documentElement.setAttribute('data-theme', 'dark');
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
 
   if (!mounted) {
     return <div className="fixed inset-0 flex items-center justify-center"><div className="spinner w-12 h-12" /></div>;
   }
 
-  return <App />;
+  return <App darkMode={darkMode} setDarkMode={setDarkMode} />;
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

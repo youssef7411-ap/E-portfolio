@@ -134,10 +134,6 @@ function App({ darkMode, setDarkMode }) {
   const [preloadProgress, setPreloadProgress] = useState({ loaded: 0, total: 0 });
 
   useEffect(() => {
-    localStorage.setItem('darkMode', darkMode);
-  }, [darkMode]);
-
-  useEffect(() => {
     let isActive = true;
     let doneTimer;
 
@@ -290,7 +286,7 @@ function App({ darkMode, setDarkMode }) {
       <div
         className={[
           'app-boot',
-          bootPhase === 'out' ? 'boot-out' : bootPhase,
+          bootPhase === 'out' ? 'boot-out' : `boot-phase-${bootPhase}`,
           darkMode ? 'dark-mode' : '',
         ].filter(Boolean).join(' ')}
         aria-label="Loading"
@@ -347,7 +343,7 @@ function App({ darkMode, setDarkMode }) {
   return (
     <Router>
       <motion.div 
-        className="dark-mode" 
+        className={darkMode ? 'dark-mode' : 'light-mode'} 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
