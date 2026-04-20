@@ -16,12 +16,6 @@ function SortableRow({ subject, onEdit, onDelete }) {
           <span>{subject.name}</span>
         </div>
       </td>
-      <td className="sm-desc-cell">{subject.description?.substring(0, 60) || '—'}</td>
-      <td>
-        <span className={`badge ${subject.visible ? 'badge-green' : 'badge-gray'}`}>
-          {subject.visible ? 'Visible' : 'Hidden'}
-        </span>
-      </td>
       <td>
         <button className="table-btn edit" onClick={() => onEdit(subject)}>Edit</button>
         <button className="table-btn delete" onClick={() => onDelete(subject._id)}>Delete</button>
@@ -94,15 +88,11 @@ function SubjectManagement() {
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving]       = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
   const [showCropper, setShowCropper] = useState(false);
   const [cropImage, setCropImage] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
     image: '',
-    visible: true,
-    order: 0,
   });
   const [uploadPreview, setUploadPreview] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -201,7 +191,7 @@ function SubjectManagement() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', description: '', image: '', visible: true, order: 0 });
+    setFormData({ name: '', image: '' });
     setUploadPreview('');
     setShowForm(true);
   };
@@ -209,10 +199,7 @@ function SubjectManagement() {
     setEditingId(subject._id);
     setFormData({
       name: subject.name || '',
-      description: subject.description || '',
       image: subject.image || '',
-      visible: subject.visible !== false,
-      order: subject.order || 0,
     });
     setUploadPreview(subject.image || '');
     setShowForm(true);
@@ -227,15 +214,11 @@ function SubjectManagement() {
     const url    = editingId
       ? `${API_URL}/api/subjects/${editingId}`
       : `${API_URL}/api/subjects`;
-    const payload = {
-      ...formData,
-      order: Number(formData.order) || 0,
-    };
     try {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
       if (res.ok) { closeForm(); fetchSubjects(); }
     } catch (err) { console.error(err); }
@@ -283,7 +266,7 @@ function SubjectManagement() {
                   value={formData.name}
                   onChange={handleFormChange}
                   required
-                  placeholder="e.g., Mathematics 101"
+                  placeholder="e.g., Mathematics"
                 />
               </div>
 
@@ -302,7 +285,7 @@ function SubjectManagement() {
                             setShowCropper(true);
                           }}
                         >
-                          ✂ Crop
+                          Crop
                         </button>
                         <button 
                           type="button" 
@@ -312,7 +295,7 @@ function SubjectManagement() {
                             setFormData(prev => ({ ...prev, image: '' }));
                           }}
                         >
-                          ✕
+                          Remove
                         </button>
                       </div>
                     </div>
@@ -333,92 +316,14 @@ function SubjectManagement() {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleFormChange}
-                  placeholder="Brief description of this subject..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Order</label>
-                  <input
-                    type="number"
-                    name="order"
-                    value={formData.order}
-                    onChange={handleFormChange}
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label>Visibility</label>
-                  <label className="toggle-label">
-                    <input
-                      type="checkbox"
-                      name="visible"
-                      checked={formData.visible}
-                      onChange={handleFormChange}
-                    />
-                    <span className="toggle-switch"></span>
-                    <span>{formData.visible ? 'Visible' : 'Hidden'}</span>
-                  </label>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? 'Saving...' : editingId ? 'Update Subject' : 'Create Subject'}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={closeForm}>
                   Cancel
                 </button>
-                <button 
-                  type="button" 
-                  className={`btn ${showPreview ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setShowPreview(!showPreview)}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  {showPreview ? 'Hide Preview' : 'Show Preview'}
-                </button>
               </div>
-
-              {/* Live Preview */}
-              {showPreview && (
-                <div className="sm-preview-card" style={{ marginTop: '1.5rem' }}>
-                  <div className="sm-preview-header">
-                    <h3>Live Preview</h3>
-                  </div>
-                  <div className="sm-preview-body">
-                    {formData.image && (
-                      <img 
-                        src={formData.image} 
-                        alt={formData.name || 'Subject'} 
-                        className="sm-preview-image" 
-                      />
-                    )}
-                    <h4 className="sm-preview-title">
-                      {formData.name || 'Subject Name'}
-                    </h4>
-                    <p className="sm-preview-desc">
-                      {formData.description || 'Description will appear here...'}
-                    </p>
-                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                      <span className={`badge ${formData.visible ? 'badge-green' : 'badge-gray'}`}>
-                        {formData.visible ? 'Visible' : 'Hidden'}
-                      </span>
-                      <span className="badge badge-gray">
-                        Order: {formData.order}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </form>
           </div>
         </div>
@@ -429,9 +334,7 @@ function SubjectManagement() {
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Status</th>
+              <th>Subject</th>
               <th>Actions</th>
             </tr>
           </thead>

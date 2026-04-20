@@ -1,16 +1,16 @@
 /* ─── Subject Management ────────────────────────────────────── */
-/* Most layout styles come from Admin.css — only component-specific overrides */
+.management-container { max-width: 900px; margin: 0 auto; }
 
-.sm-name-cell { display: flex; align-items: center; gap: 10px; }
+.sm-name-cell { display: flex; align-items: center; gap: 12px; }
 .sm-thumb {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   object-fit: cover;
-  border-radius: var(--radius);
+  border-radius: 8px;
   flex-shrink: 0;
   border: 1px solid var(--border);
+  background: var(--bg-2);
 }
-.sm-desc-cell { color: var(--text-2); max-width: 260px; }
 
 /* Upload area */
 .sm-upload-area { margin-top: 0.5rem; }
@@ -19,34 +19,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 2rem;
   border: 2px dashed var(--border);
-  border-radius: var(--radius);
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .sm-upload-drop:hover {
   border-color: var(--accent);
-  background: var(--accent-glow-sm);
+  background: rgba(251, 191, 36, 0.05);
 }
 
-.sm-upload-drop input {
-  display: none;
-}
+.sm-upload-drop input { display: none; }
 
 .sm-upload-label {
   color: var(--text-3);
   font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .sm-upload-preview {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border);
+  background: var(--bg-2);
 }
 
 .sm-upload-preview img {
@@ -57,23 +57,23 @@
 
 .sm-upload-actions {
   position: absolute;
-  bottom: var(--space-sm);
-  right: var(--space-sm);
+  bottom: 12px;
+  right: 12px;
   display: flex;
-  gap: var(--space-xs);
+  gap: 8px;
 }
 
 .sm-upload-remove,
 .sm-crop-btn {
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.7);
   color: white;
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 600;
-  transition: all var(--transition);
+  transition: all 0.15s ease;
 }
 
 .sm-upload-remove:hover,
@@ -89,112 +89,9 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: var(--radius);
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg-2);
-}
-
-.sm-crop-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
-  gap: var(--space-md);
-}
-
-.sm-crop-btn {
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all var(--transition);
-}
-
-.sm-crop-btn:hover {
-  background: var(--accent);
-  color: #000;
-  border-color: var(--accent);
-}
-
-/* Live Preview */
-.sm-preview-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.sm-preview-header {
-  padding: var(--space-lg);
-  border-bottom: 1px solid var(--border);
-}
-
-.sm-preview-header h3 {
-  font-size: 1rem;
-  color: var(--text-2);
-}
-
-.sm-preview-body {
-  padding: var(--space-lg);
-}
-
-.sm-preview-image {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-radius: var(--radius);
-  margin-bottom: var(--space-md);
-}
-
-.sm-preview-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: var(--space-xs);
-}
-
-.sm-preview-desc {
-  font-size: 0.875rem;
-  color: var(--text-3);
-}
-
-/* Form Groups */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.form-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-2);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-md);
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--text-2);
-}
-
-.toggle-label input {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--accent);
 }
 
 /* Cropper Modal */
@@ -202,28 +99,28 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-xl);
+  padding: 2rem;
 }
 
 .sm-crop-modal .sm-crop-container {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   aspect-ratio: 16 / 9;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   overflow: hidden;
 }
 
 .sm-crop-controls {
-  margin-top: var(--space-lg);
+  margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 1rem;
   width: 100%;
   max-width: 400px;
 }
@@ -231,7 +128,7 @@
 .sm-crop-zoom {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 1rem;
   color: var(--text-2);
   font-size: 0.875rem;
 }
@@ -255,83 +152,58 @@
 
 .sm-crop-actions {
   display: flex;
-  gap: var(--space-md);
+  gap: 1rem;
   justify-content: center;
 }
 
-.sm-upload-preview img {
+/* Live Preview */
+.sm-preview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sm-preview-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sm-preview-header h3 {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.sm-preview-body {
+  padding: 1.25rem;
+}
+
+.sm-preview-image {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 1rem;
 }
 
-.sm-upload-remove {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sm-preview-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 /* Form layout */
-.form-row {
+.form-group {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.form-row .form-group {
-  flex: 1;
-}
-
-/* Toggle switch */
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  padding: 0.75rem 0;
-}
-
-.toggle-label input {
-  display: none;
-}
-
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-  background: var(--bg-3);
-  border-radius: 12px;
-  transition: background 0.2s ease;
-}
-
-.toggle-switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  background: var(--text-3);
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.toggle-label input:checked + .toggle-switch {
-  background: var(--accent);
-}
-
-.toggle-label input:checked + .toggle-switch::after {
-  left: 22px;
-  background: #000;
+.form-group label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-2);
 }
 
 /* Upload error */
@@ -339,4 +211,60 @@
   color: var(--danger);
   font-size: 0.75rem;
   margin-top: 0.5rem;
+}
+
+/* Modal styling */
+.pm-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 560px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.pm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.pm-modal-header h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pm-modal-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.pm-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 1rem;
+}
+
+.pm-modal-body {
+  padding: 1.5rem;
+}
+
+.pm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 1rem;
 }

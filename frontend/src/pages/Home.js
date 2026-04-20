@@ -7,6 +7,39 @@ import { API_URL } from '../config/api';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const useCountUp = (end, duration = 1500, shouldAnimate = true) => {
+  const [count, setCount] = useState(shouldAnimate ? 0 : end);
+  
+  useEffect(() => {
+    if (!shouldAnimate || end === 0) {
+      setCount(end);
+      return;
+    }
+    
+    let startTime = null;
+    let animationFrame;
+    
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(easeOut * end));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+    
+    animationFrame = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    };
+  }, [end, duration, shouldAnimate]);
+  
+  return count;
+};
+
 const containerVariants = {
   hidden: {},
   visible: {
@@ -76,44 +109,48 @@ function Home() {
   const navigate = useNavigate();
   const subjectsSectionRef = useRef(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      let attempts = 0;
-      while (attempts < 4) {
-        attempts += 1;
-        try {
-          const [subjectsRes, postsRes] = await Promise.all([
-            fetch(`${API_URL}/api/subjects`),
-            fetch(`${API_URL}/api/posts`),
-          ]);
+  const fetchData = async () => {
+    let attempts = 0;
+    while (attempts < 4) {
+      attempts += 1;
+      try {
+        const [subjectsRes, postsRes] = await Promise.all([
+          fetch(`${API_URL}/api/subjects`),
+          fetch(`${API_URL}/api/posts`),
+        ]);
 
-          if (!subjectsRes.ok || !postsRes.ok) {
-            throw new Error(`Fetch failed (${subjectsRes.status}/${postsRes.status})`);
-          }
+        if (!subjectsRes.ok || !postsRes.ok) {
+          throw new Error(`Fetch failed (${subjectsRes.status}/${postsRes.status})`);
+        }
 
-          const [subjectsData, postsData] = await Promise.all([
-            subjectsRes.json().catch(() => []),
-            postsRes.json().catch(() => []),
-          ]);
+        const [subjectsData, postsData] = await Promise.all([
+          subjectsRes.json().catch(() => []),
+          postsRes.json().catch(() => []),
+        ]);
 
-          setSubjects(Array.isArray(subjectsData) ? subjectsData.filter((subject) => subject.visible !== false) : []);
-          setPosts(Array.isArray(postsData) ? postsData : []);
+        setSubjects(Array.isArray(subjectsData) ? subjectsData.filter((subject) => subject.visible !== false) : []);
+        setPosts(Array.isArray(postsData) ? postsData : []);
+        setLoading(false);
+        return;
+      } catch {
+        if (attempts >= 4) {
+          setSubjects([]);
+          setPosts([]);
           setLoading(false);
           return;
-        } catch {
-          if (attempts >= 4) {
-            setSubjects([]);
-            setPosts([]);
-            setLoading(false);
-            return;
-          }
-          await wait(800);
         }
+        await wait(800);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const subjectsCount = useCountUp(sortedSubjects.length, 1000);
+  const projectsCount = useCountUp(totalProjects, 1100);
+  const mediaCount = useCountUp(totalAssets, 1300);
 
   const subjectLookup = useMemo(() => new Map(
     subjects.map((subject) => [String(subject?._id || ''), subject]),
@@ -160,17 +197,7 @@ function Home() {
   const totalAssets = useMemo(() => posts.reduce((sum, post) => sum + getAssetCount(post), 0), [posts]);
   const postsWithMedia = useMemo(() => posts.filter((post) => getAssetCount(post) > 0).length, [posts]);
 
-  const uploadsThisMonth = useMemo(() => {
-    const now = new Date();
-    return posts.filter((post) => {
-      const timestamp = getPostTimestamp(post);
-      if (!timestamp) return false;
-      const date = new Date(timestamp);
-      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-    }).length;
-  }, [posts]);
-
-  const recentUploads = useMemo(() => postsByRecency.slice(0, 5).map((post) => {
+  const recentUploads = useMemo(() => postsByRecency.slice(0, 3).map((post) => {
     const subjectId = String(getSubjectId(post) || '');
     const subject = post?.subject_id?.name || subjectLookup.get(subjectId)?.name || 'General';
 
@@ -271,28 +298,22 @@ function Home() {
 
   const overviewStats = [
     {
-      label: 'Total Posts',
-      value: loading ? '--' : formatMetric(posts.length),
-      detail: 'Published entries',
+      label: 'Subjects',
+      value: loading ? '--' : sortedSubjects.length,
+      detail: 'Visible sections',
       tone: 'lime',
     },
     {
-      label: 'Subjects',
-      value: loading ? '--' : formatMetric(sortedSubjects.length),
-      detail: 'Visible sections',
+      label: 'Projects',
+      value: loading ? '--' : totalProjects,
+      detail: 'Hands-on work',
       tone: 'orange',
     },
     {
-      label: 'Projects',
-      value: loading ? '--' : formatMetric(totalProjects),
-      detail: 'Hands-on work',
-      tone: 'sky',
-    },
-    {
-      label: 'Media Assets',
-      value: loading ? '--' : formatMetric(totalAssets),
+      label: 'Media',
+      value: loading ? '--' : totalAssets,
       detail: 'Files, images, videos',
-      tone: 'neutral',
+      tone: 'sky',
     },
   ];
 
@@ -382,7 +403,7 @@ function Home() {
                   whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
                   onClick={() => navigate('/admin/login')}
                 >
-                  View Admin
+                  Admin Login
                 </motion.button>
               </motion.div>
             </div>
@@ -395,7 +416,9 @@ function Home() {
                     className={`dashboard-stat-card dashboard-stat-card--${stat.tone}`}
                   >
                     <span className="dashboard-stat-label">{stat.label}</span>
-                    <strong className="dashboard-stat-value">{stat.value}</strong>
+                    <strong className="dashboard-stat-value">
+                      {loading ? '--' : (stat.label === 'Subjects' ? subjectsCount : stat.label === 'Projects' ? projectsCount : stat.label === 'Media' ? mediaCount : stat.value)}
+                    </strong>
                     <span className="dashboard-stat-detail">{stat.detail}</span>
                   </article>
                 ))}

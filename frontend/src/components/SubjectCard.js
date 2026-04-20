@@ -9,6 +9,7 @@ const cardVariants = {
 
 function SubjectCard({ subject, onClick, meta, variant = 'grid' }) {
   const prefersReducedMotion = useReducedMotion();
+  const initials = subject?.name?.slice(0, 2).toUpperCase() || '??';
 
   return (
     <motion.div
@@ -19,7 +20,7 @@ function SubjectCard({ subject, onClick, meta, variant = 'grid' }) {
       transition={prefersReducedMotion ? { duration: 0.18 } : { type: 'spring', stiffness: 260, damping: 28 }}
       onClick={onClick}
     >
-      {subject.image && (
+      {subject.image ? (
         <div className="sc-image-wrapper">
           <img
             src={subject.image}
@@ -31,12 +32,13 @@ function SubjectCard({ subject, onClick, meta, variant = 'grid' }) {
             <h3 className="sc-overlay-title">{subject.name}</h3>
           </div>
         </div>
+      ) : (
+        <div className="sc-image-wrapper">
+          <span className="sc-placeholder">{initials}</span>
+        </div>
       )}
       <div className="sc-body">
-        {!subject.image && <h3 className="sc-title">{subject.name}</h3>}
-        {subject.description && (
-          <p className="sc-desc">{subject.description}</p>
-        )}
+        <h3 className="sc-title">{subject.name}</h3>
         {meta && (
           <div className="sc-meta">
             {typeof meta.postCount === 'number' && (
@@ -47,7 +49,7 @@ function SubjectCard({ subject, onClick, meta, variant = 'grid' }) {
             )}
           </div>
         )}
-        <span className="sc-cta">View posts →</span>
+        <span className="sc-cta">View posts</span>
       </div>
     </motion.div>
   );
