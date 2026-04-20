@@ -41,8 +41,6 @@ const formatDate = (value, options) => {
   return new Date(timestamp).toLocaleDateString('en-US', options);
 };
 
-const stripHtml = (value = '') => String(value).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-
 const getSubjectId = (post) => post?.subject_id?._id || post?.subject_id || null;
 
 const getPostTimestamp = (post) => {
