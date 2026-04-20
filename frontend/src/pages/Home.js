@@ -63,11 +63,6 @@ const itemVariants = {
   },
 };
 
-const formatMetric = (value) => new Intl.NumberFormat('en-US', {
-  notation: value >= 1000 ? 'compact' : 'standard',
-  maximumFractionDigits: value >= 1000 ? 1 : 0,
-}).format(value);
-
 const formatDate = (value, options) => {
   const timestamp = new Date(value || 0).getTime();
   if (!Number.isFinite(timestamp) || timestamp <= 0) return 'Not available';
@@ -222,7 +217,6 @@ function Home() {
 
   const totalProjects = useMemo(() => posts.filter((post) => post?.type === 'project').length, [posts]);
   const totalAssets = useMemo(() => posts.reduce((sum, post) => sum + getAssetCount(post), 0), [posts]);
-  const postsWithMedia = useMemo(() => posts.filter((post) => getAssetCount(post) > 0).length, [posts]);
 
   const recentUploads = useMemo(() => postsByRecency.slice(0, 3).map((post) => {
     const subjectId = String(getSubjectId(post) || '');
@@ -238,90 +232,6 @@ function Home() {
       timestamp: getPostTimestamp(post),
     };
   }), [postsByRecency, subjectLookup]);
-
-  const latestRefreshLabel = recentUploads[0]?.timestamp
-    ? formatDate(recentUploads[0].timestamp, { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'Syncing';
-
-  const monthlyActivity = useMemo(() => {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
-    const months = Array.from({ length: 6 }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
-      return {
-        key: `${date.getFullYear()}-${date.getMonth()}`,
-        label: formatter.format(date),
-        count: 0,
-      };
-    });
-
-    const lookup = new Map(months.map((month) => [month.key, month]));
-
-    posts.forEach((post) => {
-      const timestamp = getPostTimestamp(post);
-      if (!timestamp) return;
-      const date = new Date(timestamp);
-      const month = lookup.get(`${date.getFullYear()}-${date.getMonth()}`);
-      if (month) {
-        month.count += 1;
-      }
-    });
-
-    const maxCount = Math.max(1, ...months.map((month) => month.count));
-    return months.map((month) => ({
-      ...month,
-      height: `${Math.max(14, (month.count / maxCount) * 100)}%`,
-    }));
-  }, [posts]);
-
-  const topSubjects = useMemo(() => {
-    const items = sortedSubjects
-      .map((subject) => {
-        const meta = subjectMeta.get(String(subject?._id || '')) || {
-          postCount: 0,
-          projectCount: 0,
-          attachmentCount: 0,
-          lastUpdated: 0,
-        };
-
-        return {
-          id: subject?._id,
-          name: subject?.name || 'Untitled subject',
-          postCount: meta.postCount,
-          projectCount: meta.projectCount,
-          lastUpdated: meta.lastUpdated,
-        };
-      })
-      .filter((subject) => subject.postCount > 0)
-      .sort((a, b) => b.postCount - a.postCount || b.projectCount - a.projectCount)
-      .slice(0, 3);
-
-    const maxPosts = Math.max(1, ...items.map((item) => item.postCount));
-    return items.map((item) => ({
-      ...item,
-      fill: `${Math.max(18, (item.postCount / maxPosts) * 100)}%`,
-    }));
-  }, [sortedSubjects, subjectMeta]);
-
-  const typeBreakdown = useMemo(() => {
-    const palette = ['var(--chart-lime)', 'var(--chart-orange)', 'var(--chart-sky)', 'rgba(255, 255, 255, 0.8)'];
-    const counts = posts.reduce((acc, post) => {
-      const type = String(post?.type || 'other');
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(counts)
-      .sort(([, countA], [, countB]) => countB - countA)
-      .slice(0, 4)
-      .map(([type, count], index) => ({
-        type,
-        label: formatTypeLabel(type),
-        count,
-        share: posts.length ? Math.round((count / posts.length) * 100) : 0,
-        color: palette[index] || 'rgba(255, 255, 255, 0.7)',
-      }));
-  }, [posts]);
 
   const overviewStats = [
     {

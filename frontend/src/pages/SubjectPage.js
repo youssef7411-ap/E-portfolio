@@ -123,8 +123,6 @@ function SubjectPage({ darkMode, setDarkMode }) {
     return list;
   }, [posts, filterGrade, filterSemester, filterType]);
 
-  const animateList = !reduceMotion && filtered.length <= 16;
-
   if (loading) return (
     <div className="sp-page flex-center" style={{ minHeight: '80vh' }}>
       <div className="spinner" />
