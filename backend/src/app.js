@@ -12,7 +12,6 @@ import subjectRoutes from './routes/subjects.js';
 import postRoutes from './routes/posts.js';
 import visitorRoutes from './routes/visitors.js';
 import settingsRoutes from './routes/settings.js';
-import emailingRoutes from './routes/emailing.js';
 import authenticate from './middleware/authenticate.js';
 import { hasObjectStorageConfig, uploadBufferToObjectStorage } from './utils/objectStorage.js';
 
@@ -135,79 +134,6 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/emailing', emailingRoutes);
-
-// Email settings endpoint
-app.get('/api/email/settings', authenticate, async (req, res) => {
-  try {
-    const { getOrCreateSiteSettings, mergeSiteSettings } = await import('./utils/siteSettings.js');
-    const settings = await getOrCreateSiteSettings();
-    const merged = mergeSiteSettings(settings.toObject());
-    res.json({
-      defaultEmail: merged.emailing.defaultRecipientEmail || '',
-      senderName: merged.emailing.senderName || '',
-      senderEmail: merged.emailing.senderEmail || '',
-      smtpHost: process.env.SMTP_HOST || '',
-      smtpPort: process.env.SMTP_PORT || '',
-      smtpUser: process.env.SMTP_USER || '',
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to load email settings' });
-  }
-});
-
-app.put('/api/email/settings', authenticate, async (req, res) => {
-  try {
-    const { getOrCreateSiteSettings, normalizeSiteSettingsUpdate } = await import('./utils/siteSettings.js');
-    const current = await getOrCreateSiteSettings();
-    const normalized = normalizeSiteSettingsUpdate({
-      emailing: {
-        ...current.toObject().emailing,
-        defaultRecipientEmail: req.body.defaultEmail,
-        senderName: req.body.senderName,
-        senderEmail: req.body.senderEmail,
-      },
-    }, current.toObject());
-    current.set(normalized);
-    await current.save();
-    res.json({ message: 'Settings saved' });
-  } catch (error) {
-    res.status(400).json({ message: 'Failed to save settings' });
-  }
-});
-
-app.post('/api/email/test', authenticate, async (req, res) => {
-  try {
-    const { sendAppEmail, getMailerStatus } = await import('./utils/mailer.js');
-    const { getOrCreateSiteSettings, mergeSiteSettings } = await import('./utils/siteSettings.js');
-    const settings = await getOrCreateSiteSettings();
-    const merged = mergeSiteSettings(settings.toObject());
-    const testEmail = req.body.to;
-    
-    await sendAppEmail({
-      to: testEmail,
-      subject: 'Test Email from E-Portfolio',
-      text: 'This is a test email. If you received this, your email settings are working!',
-      fromEmail: merged.emailing.senderEmail,
-      fromName: merged.emailing.senderName,
-    });
-    
-    res.json({ message: 'Test email sent successfully' });
-  } catch (error) {
-    res.status(400).json({ message: error.message || 'Failed to send test email' });
-  }
-});
-
-// Teachers endpoint
-app.get('/api/teachers', authenticate, async (req, res) => {
-  try {
-    const TeacherEmail = (await import('../models/TeacherEmail.js')).default;
-    const teachers = await TeacherEmail.find().lean();
-    res.json(teachers);
-  } catch (error) {
-    res.json([]);
-  }
-});
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

@@ -106,8 +106,11 @@ function Home() {
   const [subjects, setSubjects] = useState([]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [subjectQuery, setSubjectQuery] = useState('');
+  const [isValid, setIsValid] = useState(null);
   const navigate = useNavigate();
   const subjectsSectionRef = useRef(null);
+  const inputRef = useRef(null);
 
   const fetchData = async () => {
     let attempts = 0;
@@ -147,6 +150,20 @@ function Home() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (subjectQuery.trim().length === 0) {
+      setIsValid(null);
+    } else {
+      setIsValid(subjectQuery.trim().length >= 2);
+    }
+  }, [subjectQuery]);
 
   // eslint-disable-next-line no-use-before-define
   const subjectsCount = useCountUp(sortedSubjects.length, 1000);
@@ -195,6 +212,13 @@ function Home() {
       return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
     })
   ), [subjects]);
+
+  const filteredSubjects = useMemo(() => {
+    if (!subjectQuery.trim()) return sortedSubjects;
+    return sortedSubjects.filter(s => 
+      s.name.toLowerCase().includes(subjectQuery.toLowerCase())
+    );
+  }, [sortedSubjects, subjectQuery]);
 
   const totalProjects = useMemo(() => posts.filter((post) => post?.type === 'project').length, [posts]);
   const totalAssets = useMemo(() => posts.reduce((sum, post) => sum + getAssetCount(post), 0), [posts]);
@@ -320,14 +344,14 @@ function Home() {
     },
   ];
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && filteredSubjects.length > 0 && isValid) {
+      navigate(`/subject/${filteredSubjects[0]._id}`);
+    }
+  };
+
   return (
     <div className="home">
-      <div className="bg-shapes">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
-
       <header className="home-header glass">
         <div className="container home-header-inner">
           <motion.div variants={itemVariants}>
@@ -350,6 +374,9 @@ function Home() {
           </motion.div>
 
           <div className="header-right">
+            <button className="btn btn-ghost" onClick={() => navigate('/admin/login')}>
+              Admin
+            </button>
             <div className="header-status-pill">
               <span className="header-status-dot" />
               {loading ? 'Syncing' : `${posts.length} posts`}
@@ -365,189 +392,55 @@ function Home() {
         animate={prefersReducedMotion ? undefined : 'visible'}
       >
         <div className="container">
-          <div className="dashboard-shell">
-            <div className="dashboard-intro">
-              <span className="dashboard-kicker">Portfolio Command Center</span>
-              <motion.h2 className="hero-headline">
-                Explore my academic work
-              </motion.h2>
-              <motion.p className="hero-copy">
-                Browse subjects, projects, and assignments. See recent uploads, total posts, subject activity, and content mix all in one place.
-              </motion.p>
+          <div className="hero-content">
+            <span className="hero-kicker">Academic Excellence</span>
+            <h2 className="hero-headline">Explore my educational journey</h2>
+            <p className="hero-copy">
+              A curated collection of my projects, assignments, and academic achievements. Search for a subject below to get started.
+            </p>
 
-              <div className="dashboard-pill-row">
-                <div className="dashboard-pill">
-                  <span className="pill-label">Latest refresh</span>
-                  <strong>{latestRefreshLabel}</strong>
-                </div>
-                <div className="dashboard-pill">
-                  <span className="pill-label">Posts with media</span>
-                  <strong>{loading ? '--' : `${formatMetric(postsWithMedia)} enriched posts`}</strong>
+            <div className="subject-search-container">
+              <label htmlFor="subject-input" className="subject-input-label">
+                Find a subject
+              </label>
+              <div className="subject-input-wrapper">
+                <input
+                  ref={inputRef}
+                  id="subject-input"
+                  type="text"
+                  className={`subject-input ${isValid === true ? 'is-valid' : isValid === false ? 'is-invalid' : ''}`}
+                  placeholder="Enter subject name"
+                  value={subjectQuery}
+                  onChange={(e) => setSubjectQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  aria-invalid={isValid === false}
+                />
+                <div className="input-feedback">
+                  {isValid === true && (
+                    <span className="feedback-icon valid">✓</span>
+                  )}
+                  {isValid === false && (
+                    <span className="feedback-icon invalid">!</span>
+                  )}
                 </div>
               </div>
-
-              <motion.div
-                className="hero-cta"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
-                animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                transition={prefersReducedMotion ? undefined : { delay: 0.16, duration: 0.35 }}
-              >
-                <motion.button
-                  className="hero-btn btn btn-primary"
-                  whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
-                  whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-                  onClick={() => subjectsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                >
-                  Explore Subjects
-                </motion.button>
-                <motion.button
-                  className="hero-btn btn btn-ghost dashboard-ghost"
-                  whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
-                  whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-                  onClick={() => navigate('/admin/login')}
-                >
-                  Admin Login
-                </motion.button>
-              </motion.div>
             </div>
+          </div>
 
-            <div className="dashboard-board">
-              <div className="dashboard-stat-grid">
-                {overviewStats.map((stat) => (
-                  <article
-                    key={stat.label}
-                    className={`dashboard-stat-card dashboard-stat-card--${stat.tone}`}
-                  >
-                    <span className="dashboard-stat-label">{stat.label}</span>
-                    <strong className="dashboard-stat-value">
-                      {loading ? '--' : (stat.label === 'Subjects' ? subjectsCount : stat.label === 'Projects' ? projectsCount : stat.label === 'Media' ? mediaCount : stat.value)}
-                    </strong>
-                    <span className="dashboard-stat-detail">{stat.detail}</span>
-                  </article>
-                ))}
-              </div>
-
-              <div className="dashboard-grid">
-                <article className="dashboard-card dashboard-card--activity">
-                  <div className="dashboard-card-head">
-                    <div>
-                      <span className="dashboard-card-kicker">Posting Trend</span>
-                      <h3>Recent activity</h3>
-                    </div>
-                    <span className="dashboard-card-meta">{loading ? 'Syncing' : `${posts.length} total`}</span>
-                  </div>
-
-                  <div className="activity-chart">
-                    {monthlyActivity.map((month) => (
-                      <div key={month.key} className="activity-bar-group">
-                        <span className="activity-bar-count">{month.count}</span>
-                        <div className="activity-bar-track">
-                          <div className="activity-bar-fill" style={{ height: month.height }} />
-                        </div>
-                        <span className="activity-bar-label">{month.label}</span>
-                      </div>
-                    ))}
-                  </div>
+          <div className="dashboard-shell">
+            <div className="dashboard-stat-grid">
+              {overviewStats.map((stat) => (
+                <article
+                  key={stat.label}
+                  className={`dashboard-stat-card dashboard-stat-card--${stat.tone}`}
+                >
+                  <span className="dashboard-stat-label">{stat.label}</span>
+                  <strong className="dashboard-stat-value">
+                    {loading ? '--' : (stat.label === 'Subjects' ? subjectsCount : stat.label === 'Projects' ? projectsCount : stat.label === 'Media' ? mediaCount : stat.value)}
+                  </strong>
+                  <span className="dashboard-stat-detail">{stat.detail}</span>
                 </article>
-
-                <article className="dashboard-card dashboard-card--recent">
-                  <div className="dashboard-card-head">
-                    <div>
-                      <span className="dashboard-card-kicker">Latest Uploads</span>
-                      <h3>Fresh content</h3>
-                    </div>
-                    <span className="dashboard-card-meta">{loading ? 'Loading' : `${recentUploads.length} items`}</span>
-                  </div>
-
-                  {recentUploads.length === 0 ? (
-                    <p className="dashboard-empty">Uploads will appear here as soon as new posts are added.</p>
-                  ) : (
-                    <div className="recent-upload-list">
-                      {recentUploads.map((post, index) => (
-                        <button
-                          key={post.id}
-                          type="button"
-                          className="recent-upload-row"
-                          onClick={() => post.subjectId && navigate(`/subject/${post.subjectId}`)}
-                        >
-                          <span className="recent-upload-index">{String(index + 1).padStart(2, '0')}</span>
-                          <span className="recent-upload-copy">
-                            <strong>{post.title}</strong>
-                            <span>{post.subject} • {post.type}</span>
-                          </span>
-                          <span className="recent-upload-meta">
-                            <span>{formatDate(post.timestamp, { month: 'short', day: 'numeric' })}</span>
-                            <strong>{post.assetCount > 0 ? `${post.assetCount} assets` : 'Text post'}</strong>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </article>
-
-                <article className="dashboard-card dashboard-card--subjects">
-                  <div className="dashboard-card-head">
-                    <div>
-                      <span className="dashboard-card-kicker">Top Subjects</span>
-                      <h3>Most active areas</h3>
-                    </div>
-                    <span className="dashboard-card-meta">{loading ? 'Loading' : `${topSubjects.length} tracked`}</span>
-                  </div>
-
-                  {topSubjects.length === 0 ? (
-                    <p className="dashboard-empty">Subject activity will show here after posts are published.</p>
-                  ) : (
-                    <div className="subject-activity-list">
-                      {topSubjects.map((subject) => (
-                        <button
-                          key={subject.id}
-                          type="button"
-                          className="subject-activity-row"
-                          onClick={() => subject.id && navigate(`/subject/${subject.id}`)}
-                        >
-                          <span className="subject-activity-copy">
-                            <strong>{subject.name}</strong>
-                            <span>{subject.projectCount} projects • Updated {formatDate(subject.lastUpdated, { month: 'short', day: 'numeric' })}</span>
-                          </span>
-                          <span className="subject-activity-track">
-                            <span className="subject-activity-fill" style={{ width: subject.fill }} />
-                          </span>
-                          <span className="subject-activity-value">{subject.postCount}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </article>
-
-                <article className="dashboard-card dashboard-card--types">
-                  <div className="dashboard-card-head">
-                    <div>
-                      <span className="dashboard-card-kicker">Content Mix</span>
-                      <h3>Post categories</h3>
-                    </div>
-                    <span className="dashboard-card-meta">{loading ? 'Loading' : `${typeBreakdown.length} visible types`}</span>
-                  </div>
-
-                  {typeBreakdown.length === 0 ? (
-                    <p className="dashboard-empty">Category insights will appear once content is available.</p>
-                  ) : (
-                    <div className="type-breakdown-list">
-                      {typeBreakdown.map((item) => (
-                        <div key={item.type} className="type-breakdown-row">
-                          <div className="type-breakdown-copy">
-                            <span className="type-breakdown-dot" style={{ backgroundColor: item.color }} />
-                            <strong>{item.label}</strong>
-                          </div>
-                          <div className="type-breakdown-track">
-                            <span className="type-breakdown-fill" style={{ width: `${item.share}%`, backgroundColor: item.color }} />
-                          </div>
-                          <span className="type-breakdown-meta">{item.count} • {item.share}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </article>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -557,22 +450,29 @@ function Home() {
         <div className="container">
           <motion.section
             ref={subjectsSectionRef}
-            className="home-panel glass"
+            className="home-panel"
             variants={containerVariants}
             initial={prefersReducedMotion ? false : 'hidden'}
             animate={prefersReducedMotion ? undefined : 'visible'}
           >
             <div className="home-section-head">
               <h3>All Subjects</h3>
-              <span>{sortedSubjects.length} shown</span>
+              <span>{filteredSubjects.length} shown</span>
             </div>
 
             {loading ? (
               <div className="section-loading">
-                <div className="spinner" />
+                <div className="skeleton-grid">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="skeleton-card" />
+                  ))}
+                </div>
               </div>
-            ) : sortedSubjects.length === 0 ? (
-              <p className="empty-state">No subjects available yet.</p>
+            ) : filteredSubjects.length === 0 ? (
+              <div className="empty-state">
+                <p>No subjects match "{subjectQuery}"</p>
+                <button className="btn btn-secondary" onClick={() => setSubjectQuery('')}>Clear search</button>
+              </div>
             ) : (
               <motion.div
                 className="subjects-grid"
@@ -580,7 +480,7 @@ function Home() {
                 initial={prefersReducedMotion ? false : 'hidden'}
                 animate={prefersReducedMotion ? undefined : 'visible'}
               >
-                {sortedSubjects.map((subject) => (
+                {filteredSubjects.map((subject) => (
                   <SubjectCard
                     key={subject._id}
                     subject={subject}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
+import { useDropzone } from 'react-dropzone';
+import { getCroppedImg } from '../utils/cropImage';
 import '../../styles/SubjectManagement.css';
 import { API_URL } from '../../config/api';
 
@@ -10,8 +12,19 @@ function SortableRow({ subject, onEdit, onDelete }) {
     <tr>
       <td>
         <div className="sm-name-cell">
-          {subject.image && (
+          {subject.buttonImage ? (
+            <div 
+              className="sm-thumb-container" 
+              style={{ backgroundColor: subject.bgColor || 'var(--bg-2)' }}
+            >
+              <img src={subject.buttonImage} alt="" className="sm-thumb-img" loading="lazy" />
+            </div>
+          ) : subject.image ? (
             <img src={subject.image} alt="" className="sm-thumb" loading="lazy" />
+          ) : (
+            <div className="sm-thumb sm-placeholder">
+              {subject.name.slice(0, 2).toUpperCase()}
+            </div>
           )}
           <span>{subject.name}</span>
         </div>
@@ -25,9 +38,10 @@ function SortableRow({ subject, onEdit, onDelete }) {
 }
 
 /* ── Image Cropper Component ─────────────────────────────── */
-function ImageCropper({ image, onCropComplete, onCancel, onSave }) {
+function ImageCropper({ image, onCropComplete, onCancel, initialAspect = 16 / 9 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [aspect, setAspect] = useState(initialAspect);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const onCropChange = (crop) => {
@@ -42,8 +56,13 @@ function ImageCropper({ image, onCropComplete, onCancel, onSave }) {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const handleSave = () => {
-    onCropComplete(croppedAreaPixels);
+  const handleSave = async () => {
+    try {
+      const croppedBlob = await getCroppedImg(image, croppedAreaPixels);
+      onCropComplete(croppedBlob);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -53,13 +72,43 @@ function ImageCropper({ image, onCropComplete, onCancel, onSave }) {
           image={image}
           crop={crop}
           zoom={zoom}
-          aspect={16 / 9}
+          aspect={aspect}
           onCropChange={onCropChange}
           onZoomChange={onZoomChange}
           onCropComplete={onCropCompleteHandler}
         />
       </div>
       <div className="sm-crop-controls">
+        <div className="sm-aspect-ratios">
+          <button 
+            type="button" 
+            className={`aspect-btn ${aspect === 16/9 ? 'active' : ''}`}
+            onClick={() => setAspect(16/9)}
+          >
+            16:9
+          </button>
+          <button 
+            type="button" 
+            className={`aspect-btn ${aspect === 4/3 ? 'active' : ''}`}
+            onClick={() => setAspect(4/3)}
+          >
+            4:3
+          </button>
+          <button 
+            type="button" 
+            className={`aspect-btn ${aspect === 3/2 ? 'active' : ''}`}
+            onClick={() => setAspect(3/2)}
+          >
+            3:2
+          </button>
+          <button 
+            type="button" 
+            className={`aspect-btn ${aspect === 1 ? 'active' : ''}`}
+            onClick={() => setAspect(1)}
+          >
+            1:1
+          </button>
+        </div>
         <div className="sm-crop-zoom">
           <span>Zoom</span>
           <input
@@ -68,7 +117,7 @@ function ImageCropper({ image, onCropComplete, onCancel, onSave }) {
             max={3}
             step={0.1}
             value={zoom}
-            onChange={(e) => setZoom(e.target.value)}
+            onChange={(e) => setZoom(parseFloat(e.target.value))}
           />
         </div>
         <div className="sm-crop-actions">
@@ -90,11 +139,15 @@ function SubjectManagement() {
   const [saving, setSaving]       = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [cropImage, setCropImage] = useState(null);
+  const [cropTarget, setCropTarget] = useState('image'); // 'image' or 'buttonImage'
   const [formData, setFormData] = useState({
     name: '',
     image: '',
+    buttonImage: '',
+    bgColor: '#3b82f6',
   });
-  const [uploadPreview, setUploadPreview] = useState('');
+  const [headerPreview, setHeaderPreview] = useState('');
+  const [buttonPreview, setButtonPreview] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
@@ -149,23 +202,58 @@ function SubjectManagement() {
     }));
   };
 
-  const handleImageChange = async e => {
-    const file = e.target.files?.[0];
+  const onDropHeader = useCallback(async (acceptedFiles) => {
+    const file = acceptedFiles[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File size exceeds 5MB limit.');
+      return;
+    }
     
     const reader = new FileReader();
-    reader.onload = async () => {
-      setUploadPreview(reader.result);
-      await uploadImage(file);
+    reader.onload = () => {
+      setCropImage(reader.result);
+      setCropTarget('image');
+      setShowCropper(true);
     };
     reader.readAsDataURL(file);
-  };
+  }, []);
 
-  const uploadImage = async file => {
+  const onDropButton = useCallback(async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('File size exceeds 2MB limit for buttons.');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImage(reader.result);
+      setCropTarget('buttonImage');
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const { getRootProps: getHeaderProps, getInputProps: getHeaderInputProps, isDragActive: isHeaderDragActive } = useDropzone({
+    onDrop: onDropHeader,
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
+    multiple: false
+  });
+
+  const { getRootProps: getButtonProps, getInputProps: getButtonInputProps, isDragActive: isButtonDragActive } = useDropzone({
+    onDrop: onDropButton,
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
+    multiple: false
+  });
+
+  const uploadImage = async (blob, target) => {
     setUploading(true);
     const token = localStorage.getItem('adminToken');
     const formDataFile = new FormData();
-    formDataFile.append('file', file);
+    const filename = target === 'image' ? 'header.jpg' : 'button.png';
+    formDataFile.append('file', blob, filename);
     
     try {
       const res = await fetch(`${API_URL}/api/upload`, {
@@ -176,7 +264,9 @@ function SubjectManagement() {
       
       if (res.ok) {
         const data = await res.json();
-        setFormData(prev => ({ ...prev, image: data.url }));
+        setFormData(prev => ({ ...prev, [target]: data.url }));
+        if (target === 'image') setHeaderPreview(data.url);
+        else setButtonPreview(data.url);
         setUploadError('');
       } else {
         setUploadError('Upload failed. Please try again.');
@@ -189,10 +279,16 @@ function SubjectManagement() {
     }
   };
 
+  const handleCropComplete = async (croppedBlob) => {
+    setShowCropper(false);
+    await uploadImage(croppedBlob, cropTarget);
+  };
+
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', image: '' });
-    setUploadPreview('');
+    setFormData({ name: '', image: '', buttonImage: '', bgColor: '#3b82f6' });
+    setHeaderPreview('');
+    setButtonPreview('');
     setShowForm(true);
   };
   const openEdit = subject => {
@@ -200,8 +296,11 @@ function SubjectManagement() {
     setFormData({
       name: subject.name || '',
       image: subject.image || '',
+      buttonImage: subject.buttonImage || '',
+      bgColor: subject.bgColor || '#3b82f6',
     });
-    setUploadPreview(subject.image || '');
+    setHeaderPreview(subject.image || '');
+    setButtonPreview(subject.buttonImage || '');
     setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditingId(null); };
@@ -242,20 +341,32 @@ function SubjectManagement() {
       <div className="management-header">
         <h1>Subjects</h1>
         <button className="btn btn-primary" onClick={showForm ? closeForm : openAdd}>
-          {showForm ? '✕ Cancel' : '➕ Add Subject'}
+          {showForm ? (
+            <>
+              <svg style={{ marginRight: '8px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              Cancel
+            </>
+          ) : (
+            <>
+              <svg style={{ marginRight: '8px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Subject
+            </>
+          )}
         </button>
       </div>
 
       {/* ── Form Modal ── */}
       {showForm && (
         <div className="pm-modal-overlay" onClick={closeForm}>
-          <div className="pm-modal glass" onClick={e => e.stopPropagation()}>
+          <div className="pm-modal glass sm-modal" onClick={e => e.stopPropagation()}>
             <div className="pm-modal-header">
               <div>
                 <h2>{editingId ? 'Edit Subject' : 'Add New Subject'}</h2>
                 <p className="pm-modal-subtitle">Subjects help organize your posts</p>
               </div>
-              <button className="pm-modal-close" onClick={closeForm}>✕</button>
+              <button className="pm-modal-close" onClick={closeForm}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
             </div>
 
             <form className="pm-modal-body" onSubmit={handleSubmit}>
@@ -270,54 +381,80 @@ function SubjectManagement() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Cover Image</label>
-                <div className="sm-upload-area">
-                  {uploadPreview ? (
-                    <div className="sm-upload-preview">
-                      <img src={uploadPreview} alt="Preview" />
-                      <div className="sm-upload-actions">
-                        <button 
-                          type="button" 
-                          className="sm-crop-btn"
-                          onClick={() => {
-                            setCropImage(uploadPreview);
-                            setShowCropper(true);
-                          }}
-                        >
-                          Crop
-                        </button>
-                        <button 
-                          type="button" 
-                          className="sm-upload-remove"
-                          onClick={() => {
-                            setUploadPreview('');
-                            setFormData(prev => ({ ...prev, image: '' }));
-                          }}
-                        >
-                          Remove
-                        </button>
+              <div className="sm-upload-grid">
+                <div className="form-group">
+                  <label>Header Image (16:9 recommended)</label>
+                  <div {...getHeaderProps()} className={`sm-upload-drop ${isHeaderDragActive ? 'active' : ''}`}>
+                    <input {...getHeaderInputProps()} />
+                    {headerPreview ? (
+                      <div className="sm-upload-preview">
+                        <img src={headerPreview} alt="Header Preview" />
+                        <div className="sm-upload-overlay">Change Image</div>
                       </div>
-                    </div>
-                  ) : (
-                    <label className="sm-upload-drop">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        disabled={uploading}
-                      />
+                    ) : (
                       <span className="sm-upload-label">
-                        {uploading ? 'Uploading...' : 'Click or drag image here'}
+                        {uploading ? 'Processing...' : 'Drop header image here'}
                       </span>
-                    </label>
-                  )}
-                  {uploadError && <p className="sm-upload-error">{uploadError}</p>}
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Button Image (Icon/PNG)</label>
+                  <div {...getButtonProps()} className={`sm-upload-drop ${isButtonDragActive ? 'active' : ''}`}>
+                    <input {...getButtonInputProps()} />
+                    {buttonPreview ? (
+                      <div className="sm-button-preview-container" style={{ backgroundColor: formData.bgColor }}>
+                        <img src={buttonPreview} alt="Button Preview" className="sm-button-img" />
+                        <div className="sm-upload-overlay">Change Icon</div>
+                      </div>
+                    ) : (
+                      <span className="sm-upload-label">
+                        {uploading ? 'Processing...' : 'Drop icon here'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+              <div className="form-group">
+                <label>Button Background Color</label>
+                <div className="sm-color-picker">
+                  <input
+                    type="color"
+                    name="bgColor"
+                    value={formData.bgColor}
+                    onChange={handleFormChange}
+                    className="sm-color-input"
+                  />
+                  <span className="sm-color-value">{formData.bgColor}</span>
+                </div>
+              </div>
+
+              <div className="sm-preview-section">
+                <label>Subject Button Preview</label>
+                <div className="sm-button-preview-card">
+                  <div 
+                    className="sm-preview-button" 
+                    style={{ backgroundColor: formData.bgColor }}
+                  >
+                    {buttonPreview ? (
+                      <img src={buttonPreview} alt="" className="sm-preview-icon" />
+                    ) : (
+                      <span className="sm-preview-initials">{formData.name ? formData.name.slice(0, 2).toUpperCase() : '??'}</span>
+                    )}
+                  </div>
+                  <div className="sm-preview-info">
+                    <strong>{formData.name || 'Subject Name'}</strong>
+                    <span>Preview of how it appears on home page</span>
+                  </div>
+                </div>
+              </div>
+
+              {uploadError && <p className="sm-upload-error">{uploadError}</p>}
+
+              <div className="pm-modal-actions">
+                <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
                   {saving ? 'Saving...' : editingId ? 'Update Subject' : 'Create Subject'}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={closeForm}>
@@ -350,12 +487,12 @@ function SubjectManagement() {
           </tbody>
         </table>
         {subjects.length === 0 && (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-3)' }}>
+          <div className="sm-empty">
             No subjects yet.
           </div>
         )}
         {error && (
-          <div style={{ padding: '0 20px 20px', color: 'var(--danger)' }}>
+          <div className="sm-error">
             {error}
           </div>
         )}
@@ -365,16 +502,9 @@ function SubjectManagement() {
       {showCropper && cropImage && (
         <ImageCropper
           image={cropImage}
-          onCropComplete={(pixels) => {
-            // For simplicity, we'll just use the original image
-            // A full implementation would crop and re-upload
-            setShowCropper(false);
-          }}
+          initialAspect={cropTarget === 'image' ? 16 / 9 : 1}
+          onCropComplete={handleCropComplete}
           onCancel={() => {
-            setShowCropper(false);
-            setCropImage(null);
-          }}
-          onSave={() => {
             setShowCropper(false);
             setCropImage(null);
           }}

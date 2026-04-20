@@ -58,8 +58,8 @@ const MenuIcon = () => (
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin' },
-  { id: 'subjects', label: 'Subjects', icon: SubjectIcon, path: '/admin/subjects' },
-  { id: 'posts', label: 'Posts', icon: PostIcon, path: '/admin/posts' },
+  { id: 'subjects',  label: 'Subjects',  icon: SubjectIcon,   path: '/admin/subjects' },
+  { id: 'posts',     label: 'Posts',     icon: PostIcon,      path: '/admin/posts' },
 ];
 
 function AdminDashboard({ setIsAdmin }) {

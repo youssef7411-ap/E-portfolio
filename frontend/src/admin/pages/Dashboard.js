@@ -163,11 +163,31 @@ function Dashboard() {
     };
   }, [subjects, allPosts]);
 
-  const CARDS = [
-    { icon: '📂', label: 'Total Subjects', value: stats.subjects,      color: 'blue' },
-    { icon: '📝', label: 'Total Posts',    value: stats.posts,         color: 'gold' },
-    { icon: '📤', label: 'Recent uploads', value: stats.recentUploads, color: 'green' },
-    { icon: '👥', label: 'Total visitors', value: stats.visitors,      color: 'yellow' },
+const CARDS = [
+    { 
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>, 
+      label: 'Total Subjects', 
+      value: stats.subjects,      
+      color: 'blue' 
+    },
+    { 
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, 
+      label: 'Total Posts',    
+      value: stats.posts,         
+      color: 'gold' 
+    },
+    { 
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>, 
+      label: 'Recent uploads', 
+      value: stats.recentUploads, 
+      color: 'green' 
+    },
+    { 
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, 
+      label: 'Total visitors', 
+      value: stats.visitors,      
+      color: 'yellow' 
+    },
   ];
 
   if (loading) return <div className="management-loading"><span className="spinner" /></div>;

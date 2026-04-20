@@ -27,21 +27,10 @@ export const DEFAULT_SITE_SETTINGS = {
       showCta: true,
     },
   },
-  emailing: {
-    defaultRecipientEmail: '',
-    senderName: 'E-Portfolio',
-    senderEmail: '',
-    replyToEmail: '',
-    notificationEmail: '',
-    defaultSubject: 'Portfolio Update',
-    defaultMessage: 'Hello,\n\nA new portfolio update is available.\n\nSubject: {{subjectName}}\nLink: {{subjectLink}}\n\nThank you.',
-  },
   admin: {
     editingEnabled: true,
   },
 };
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const asPlainObject = (value) => (
   value && typeof value === 'object' && !Array.isArray(value) ? value : {}
@@ -61,19 +50,11 @@ const booleanValue = (value, fallback) => (
   typeof value === 'boolean' ? value : fallback
 );
 
-const emailValue = (value, fallback = '') => {
-  if (value === undefined) return fallback;
-  const next = String(value ?? '').trim().toLowerCase();
-  if (!next) return '';
-  return EMAIL_RE.test(next) ? next : fallback;
-};
-
 export const mergeSiteSettings = (settings) => {
   const source = asPlainObject(settings);
   const brand = asPlainObject(source.brand);
   const publicLayout = asPlainObject(source.publicLayout);
   const subjectCard = asPlainObject(publicLayout.subjectCard);
-  const emailing = asPlainObject(source.emailing);
   const admin = asPlainObject(source.admin);
 
   return {
@@ -116,39 +97,6 @@ export const mergeSiteSettings = (settings) => {
         ),
       },
     },
-    emailing: {
-      defaultRecipientEmail: emailValue(
-        emailing.defaultRecipientEmail,
-        DEFAULT_SITE_SETTINGS.emailing.defaultRecipientEmail,
-      ),
-      senderName: textValue(
-        emailing.senderName,
-        DEFAULT_SITE_SETTINGS.emailing.senderName,
-        120,
-      ),
-      senderEmail: emailValue(
-        emailing.senderEmail,
-        DEFAULT_SITE_SETTINGS.emailing.senderEmail,
-      ),
-      replyToEmail: emailValue(
-        emailing.replyToEmail,
-        DEFAULT_SITE_SETTINGS.emailing.replyToEmail,
-      ),
-      notificationEmail: emailValue(
-        emailing.notificationEmail,
-        DEFAULT_SITE_SETTINGS.emailing.notificationEmail,
-      ),
-      defaultSubject: textValue(
-        emailing.defaultSubject,
-        DEFAULT_SITE_SETTINGS.emailing.defaultSubject,
-        180,
-      ),
-      defaultMessage: blockValue(
-        emailing.defaultMessage,
-        DEFAULT_SITE_SETTINGS.emailing.defaultMessage,
-        3000,
-      ),
-    },
     admin: {
       editingEnabled: booleanValue(
         admin.editingEnabled,
@@ -175,7 +123,6 @@ export const normalizeSiteSettingsUpdate = (incoming = {}, current = DEFAULT_SIT
           ...asPlainObject(asPlainObject(patch.publicLayout).subjectCard),
         },
       },
-      emailing: { ...base.emailing, ...asPlainObject(patch.emailing) },
       admin: { ...base.admin, ...asPlainObject(patch.admin) },
     }),
     updatedAt: new Date(),

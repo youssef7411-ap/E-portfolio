@@ -765,10 +765,10 @@ export default function PostManagement() {
   return (
     <div className="management-container">
       <div className="management-header">
-        <h1>Post Management</h1>
+        <h1>Posts</h1>
         <button className="btn btn-primary" onClick={openAddModal}>
-          <span style={{ fontSize: '1.25rem' }}>+</span>
-          <span>Add New Post</span>
+          <svg style={{ marginRight: '8px' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Post
         </button>
       </div>
 
@@ -875,7 +875,9 @@ export default function PostManagement() {
                   <h2>{editingId ? 'Edit Post' : 'Add New Post'}</h2>
                   <p className="pm-modal-subtitle">Fill out the details for your post</p>
                 </div>
-                <button className="pm-modal-close" onClick={closeModal}>✕</button>
+                <button className="pm-modal-close" onClick={closeModal}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
               </div>
 
               <div className="pm-modal-body">

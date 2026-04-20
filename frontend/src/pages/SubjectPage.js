@@ -24,7 +24,7 @@ function SubjectPage({ darkMode, setDarkMode }) {
   const [filterSemester, setFilterSemester] = useState('');
   const [filterType, setFilterType] = useState('');
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('grid');
+  const [showFilters, setShowFilters] = useState(true);
   const reduceMotion = useReducedMotion();
 
   const semesterLabel = (value) => {
@@ -116,7 +116,6 @@ function SubjectPage({ darkMode, setDarkMode }) {
       list = list.filter(p => String(p?.type || '').trim().toLowerCase() === filterType);
     }
     list.sort((a, b) => {
-      // Sort by publish date (date_created) descending. Editing does not affect order.
       const tA = new Date(a.date_created).getTime();
       const tB = new Date(b.date_created).getTime();
       return tB - tA;
@@ -143,77 +142,49 @@ function SubjectPage({ darkMode, setDarkMode }) {
 
   return (
     <div className="sp-page">
-      {/* Hero Banner */}
-      {subject?.image && (
-        <div className="subject-hero-banner">
-          <img src={subject.image} alt={subject.name} />
-          <div className="subject-hero-overlay" />
-          <div className="subject-hero-content">
-            <h1>{subject.name}</h1>
-            {subject.description && <p>{subject.description}</p>}
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="sp-header">
-        <div className="container sp-header-inner">
-          <button className="sp-back-btn" onClick={() => navigate('/')} title="Back to home">
-            <span className="icon">←</span>
+      {/* Hero Banner - Full Width */}
+      <div className="subject-hero">
+        {subject?.image ? (
+          <img src={subject.image} alt={subject.name} className="subject-hero-img" />
+        ) : (
+          <div className="subject-hero-placeholder" style={{ backgroundColor: subject.bgColor || 'var(--accent)' }} />
+        )}
+        <div className="subject-hero-overlay" />
+        <div className="container subject-hero-content">
+          <button className="sp-back-link" onClick={() => navigate('/')}>
+            ← Back to subjects
           </button>
-          <div className="sp-subject-info">
-            <h1 className="sp-subject-name">{subject.name}</h1>
-            {subject.description && <p className="sp-subject-desc">{subject.description}</p>}
+          <div className="subject-title-area">
+            {subject.buttonImage && (
+              <div className="subject-title-icon" style={{ backgroundColor: subject.bgColor }}>
+                <img src={subject.buttonImage} alt="" />
+              </div>
+            )}
+            <h1>{subject.name}</h1>
           </div>
-          <div className="sp-header-meta">
-            <span className="sp-badge">{posts.length} Posts</span>
-            <div className="sp-view-toggle" role="group" aria-label="View mode">
-              <button
-                type="button"
-                className={`sp-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                onClick={() => setViewMode('grid')}
-                title="Grid view"
-              >
-                ⬚⬚
-              </button>
-              <button
-                type="button"
-                className={`sp-view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                onClick={() => setViewMode('list')}
-                title="List view"
-              >
-                ≡
-              </button>
-            </div>
+          {subject.description && <p className="subject-description">{subject.description}</p>}
+          <div className="subject-stats">
+            <span className="stat-pill">{posts.length} posts</span>
+            <span className="stat-pill">{filtered.length} visible</span>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="container sp-body">
-        {(filterOptions.grades.length > 0 || filterOptions.semesters.length > 0 || filterOptions.types.length > 0) && (
-          <aside className="sp-filters glass">
-            <div className="sp-filters-top">
-              <div className="sp-filters-title">
-                <div className="sp-filters-heading">Filters</div>
-              </div>
-              <button
-                type="button"
-                className="sp-reset-btn"
-                onClick={() => {
-                  setFilterGrade('');
-                  setFilterSemester('');
-                  setFilterType('');
-                }}
-              >
-                Reset
+      <div className="container sp-layout">
+        <aside className="sp-sidebar">
+          <div className={`sp-filters ${showFilters ? 'is-open' : 'is-collapsed'}`}>
+            <div className="sp-filters-header" onClick={() => setShowFilters(!showFilters)}>
+              <h3>Filters</h3>
+              <button className="filter-toggle-btn">
+                {showFilters ? '−' : '+'}
               </button>
             </div>
-
-            <div className="sp-filters-grid">
+            
+            <div className="sp-filters-body">
               {filterOptions.grades.length > 0 && (
-                <div className="sp-filter-block">
-                  <label className="sp-label">Grade</label>
-                  <select className="sp-control" value={filterGrade} onChange={(e) => setFilterGrade(e.target.value)}>
+                <div className="filter-group">
+                  <label>Grade Level</label>
+                  <select value={filterGrade} onChange={(e) => setFilterGrade(e.target.value)}>
                     <option value="">All Grades</option>
                     {filterOptions.grades.map(g => (
                       <option key={g} value={g}>Grade {g}</option>
@@ -223,9 +194,9 @@ function SubjectPage({ darkMode, setDarkMode }) {
               )}
 
               {filterOptions.semesters.length > 0 && (
-                <div className="sp-filter-block">
-                  <label className="sp-label">Semester</label>
-                  <select className="sp-control" value={filterSemester} onChange={(e) => setFilterSemester(e.target.value)}>
+                <div className="filter-group">
+                  <label>Semester</label>
+                  <select value={filterSemester} onChange={(e) => setFilterSemester(e.target.value)}>
                     <option value="">All Semesters</option>
                     {filterOptions.semesters.map(s => (
                       <option key={s} value={s}>{semesterLabel(s)}</option>
@@ -235,51 +206,50 @@ function SubjectPage({ darkMode, setDarkMode }) {
               )}
 
               {filterOptions.types.length > 0 && (
-                <div className="sp-filter-block">
-                  <label className="sp-label">Type</label>
-                  <select className="sp-control" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                <div className="filter-group">
+                  <label>Content Type</label>
+                  <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                     <option value="">All Types</option>
                     {filterOptions.types.map(t => (
-                      <option key={t} value={t}>{t ? t[0].toUpperCase() + t.slice(1) : ''}</option>
+                      <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              <div className="sp-filter-block">
-                <label className="sp-label">Results</label>
-                <div className="sp-count sp-control" style={{ display: 'flex', alignItems: 'center' }}>
-                  <strong>{filtered.length}</strong>&nbsp;posts
-                </div>
-              </div>
+              <button 
+                className="btn btn-secondary btn-full" 
+                onClick={() => {
+                  setFilterGrade('');
+                  setFilterSemester('');
+                  setFilterType('');
+                }}
+              >
+                Reset Filters
+              </button>
             </div>
-          </aside>
-        )}
+          </div>
+        </aside>
 
-        <main className="sp-posts" aria-label="Posts list">
+        <main className="sp-main">
           {filtered.length === 0 ? (
-            <div className="sp-empty glass">
-              <div className="empty-icon">📚</div>
-              <h3>Coming Soon</h3>
-              <p>No posts are published under this subject yet. Check back later!</p>
+            <div className="sp-empty-state">
+              <h3>No posts found</h3>
+              <p>Try adjusting your filters or search criteria.</p>
             </div>
-          ) : animateList ? (
+          ) : (
             <motion.div
-              className={`sp-posts-list ${viewMode === 'list' ? 'sp-posts-list--list' : ''}`}
+              className="posts-grid"
               variants={listVariants}
               initial="hidden"
               animate="visible"
             >
-              {filtered.map(post => (
-                <PostCard key={post._id} post={post} variants={itemVariant} />
+              {filtered.map((post) => (
+                <motion.div key={post._id} variants={itemVariant}>
+                  <PostCard post={post} />
+                </motion.div>
               ))}
             </motion.div>
-          ) : (
-            <div className={`sp-posts-list ${viewMode === 'list' ? 'sp-posts-list--list' : ''}`}>
-              {filtered.map(post => (
-                <PostCard key={post._id} post={post} />
-              ))}
-            </div>
           )}
         </main>
       </div>

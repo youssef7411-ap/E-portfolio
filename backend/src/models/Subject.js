@@ -15,6 +15,14 @@ const subjectSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  buttonImage: {
+    type: String,
+    default: ''
+  },
+  bgColor: {
+    type: String,
+    default: '#3b82f6'
+  },
   preview: {
     badge: {
       type: String,

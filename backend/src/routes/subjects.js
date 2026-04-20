@@ -3,7 +3,6 @@ import Subject from '../models/Subject.js';
 import Post from '../models/Post.js';
 import authenticate from '../middleware/authenticate.js';
 import { cleanupOrphanedUploads } from '../utils/cleanupUploads.js';
-import TeacherEmail from '../models/TeacherEmail.js';
 import PortfolioMeta from '../models/PortfolioMeta.js';
 
 const sanitizePreview = (preview = {}) => {
@@ -122,7 +121,6 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(500).json({ message: 'Failed to delete subject' });
     }
 
-    await TeacherEmail.deleteOne({ subject: subject._id });
     await updateLastUpdated();
 
     // Fire-and-forget: clean up any uploads no longer referenced
@@ -135,36 +133,6 @@ router.delete('/:id', authenticate, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
-  }
-});
-// Get teacher email for subject
-router.get('/:id/teacher-email', async (req, res) => {
-  try {
-    const record = await TeacherEmail.findOne({ subject: req.params.id });
-    res.json({ email: record ? record.email : '' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Update teacher email for subject
-router.put('/:id/teacher-email', authenticate, async (req, res) => {
-  try {
-    const email = String(req.body?.email ?? '').trim().toLowerCase();
-    if (!email) {
-      await TeacherEmail.deleteOne({ subject: req.params.id });
-      await updateLastUpdated();
-      return res.json({ email: '' });
-    }
-    const record = await TeacherEmail.findOneAndUpdate(
-      { subject: req.params.id },
-      { email, updatedAt: new Date() },
-      { upsert: true, new: true }
-    );
-    await updateLastUpdated();
-    res.json({ email: record.email });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
   }
 });
 

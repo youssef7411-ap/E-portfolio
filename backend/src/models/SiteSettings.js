@@ -89,36 +89,6 @@ const siteSettingsSchema = new mongoose.Schema({
       default: () => ({}),
     },
   },
-  emailing: {
-    defaultRecipientEmail: {
-      type: String,
-      default: '',
-    },
-    senderName: {
-      type: String,
-      default: 'E-Portfolio',
-    },
-    senderEmail: {
-      type: String,
-      default: '',
-    },
-    replyToEmail: {
-      type: String,
-      default: '',
-    },
-    notificationEmail: {
-      type: String,
-      default: '',
-    },
-    defaultSubject: {
-      type: String,
-      default: 'Portfolio Update',
-    },
-    defaultMessage: {
-      type: String,
-      default: 'Hello,\n\nA new portfolio update is available.\n\nSubject: {{subjectName}}\nLink: {{subjectLink}}\n\nThank you.',
-    },
-  },
   admin: {
     editingEnabled: {
       type: Boolean,

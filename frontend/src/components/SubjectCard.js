@@ -13,43 +13,47 @@ function SubjectCard({ subject, onClick, meta, variant = 'grid' }) {
 
   return (
     <motion.div
-      className={`subject-card card ${variant === 'list' ? 'subject-card--list' : ''}`}
+      className={`subject-card ${variant === 'list' ? 'subject-card--list' : ''}`}
       variants={cardVariants}
-      whileHover={prefersReducedMotion ? undefined : { scale: 1.015, y: -2, boxShadow: '0 12px 24px rgba(0,0,0,0.10)' }}
-      whileTap={prefersReducedMotion ? undefined : { scale: 0.995 }}
-      transition={prefersReducedMotion ? { duration: 0.18 } : { type: 'spring', stiffness: 260, damping: 28 }}
+      whileHover={prefersReducedMotion ? undefined : { y: -8, boxShadow: 'var(--shadow-lg)' }}
+      whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       onClick={onClick}
     >
-      {subject.image ? (
-        <div className="sc-image-wrapper">
-          <img
-            src={subject.image}
-            alt={subject.name}
-            className="sc-image"
-            loading="lazy"
-          />
-          <div className="sc-image-overlay">
-            <h3 className="sc-overlay-title">{subject.name}</h3>
-          </div>
+      <div className="sc-header">
+        {subject.image ? (
+          <img src={subject.image} alt="" className="sc-cover" loading="lazy" />
+        ) : (
+          <div className="sc-cover-placeholder" style={{ backgroundColor: subject.bgColor || 'var(--accent)' }} />
+        )}
+        <div className="sc-overlay" />
+        <div 
+          className="sc-icon-wrapper" 
+          style={{ backgroundColor: subject.bgColor || 'var(--accent)' }}
+        >
+          {subject.buttonImage ? (
+            <img src={subject.buttonImage} alt="" className="sc-icon" />
+          ) : (
+            <span className="sc-initials">{initials}</span>
+          )}
         </div>
-      ) : (
-        <div className="sc-image-wrapper">
-          <span className="sc-placeholder">{initials}</span>
-        </div>
-      )}
+      </div>
+      
       <div className="sc-body">
         <h3 className="sc-title">{subject.name}</h3>
-        {meta && (
-          <div className="sc-meta">
-            {typeof meta.postCount === 'number' && (
-              <span className="sc-meta-pill">{meta.postCount} posts</span>
-            )}
-            {typeof meta.projectCount === 'number' && meta.projectCount > 0 && (
-              <span className="sc-meta-pill">{meta.projectCount} projects</span>
-            )}
-          </div>
-        )}
-        <span className="sc-cta">View posts</span>
+        <div className="sc-meta">
+          <span className="sc-stat">
+            <strong>{meta?.postCount || 0}</strong> posts
+          </span>
+          {meta?.projectCount > 0 && (
+            <span className="sc-stat">
+              <strong>{meta.projectCount}</strong> projects
+            </span>
+          )}
+        </div>
+        <div className="sc-footer">
+          <span className="sc-link">View Subject →</span>
+        </div>
       </div>
     </motion.div>
   );
