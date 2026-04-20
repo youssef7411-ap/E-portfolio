@@ -96,6 +96,11 @@
   margin-bottom: 1rem;
 }
 
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
 /* Activity bar chart */
 .db-activity-chart {
   display: flex;

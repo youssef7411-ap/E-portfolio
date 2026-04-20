@@ -1,13 +1,67 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import '../../styles/Dashboard.css';
 import { API_URL } from '../../config/api';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: '#71717a' },
+    },
+    y: {
+      grid: { color: 'rgba(255,255,255,0.08)' },
+      ticks: { color: '#71717a' },
+    },
+  },
+};
+
+const doughnutOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { color: '#d4d4d8', padding: 16 },
+    },
+  },
+  cutout: '70%',
+};
 
 function Dashboard() {
   const [stats, setStats] = useState({ subjects: 0, posts: 0, recentUploads: 0, visitors: 0, visitorsToday: 0, withLocation: 0 });
   const [recentVisitors, setRecentVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [allPosts, setAllPosts] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   useEffect(() => { fetchStats(); }, []);
 
@@ -37,6 +91,7 @@ function Dashboard() {
       const visitorsData = visitorsRes.ok ? await visitorsRes.json() : { totalVisitors: 0, activeToday: 0, withLocation: 0, recentVisitors: [] };
 
       setAllPosts(posts);
+      setSubjects(subjects);
 
       const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
       const recentUploads = Array.isArray(posts)
@@ -101,6 +156,30 @@ function Dashboard() {
     }));
   }, [allPosts]);
 
+  const activityChartData = useMemo(() => ({
+    labels: monthlyActivity.map(m => m.label),
+    datasets: [{
+      data: monthlyActivity.map(m => m.count),
+      backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'],
+      borderRadius: 6,
+    }],
+  }), [monthlyActivity]);
+
+  const subjectChartData = useMemo(() => {
+    const topSubjects = subjects.slice(0, 3);
+    const postCounts = topSubjects.map(s => 
+      allPosts.filter(p => String(p.subject?._id || p.subject) === String(s._id)).length
+    );
+    return {
+      labels: topSubjects.map(s => s.name),
+      datasets: [{
+        data: postCounts,
+        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6'],
+        borderWidth: 0,
+      }],
+    };
+  }, [subjects, allPosts]);
+
   const CARDS = [
     { icon: '📂', label: 'Total Subjects', value: stats.subjects,      color: 'blue' },
     { icon: '📝', label: 'Total Posts',    value: stats.posts,         color: 'gold' },
@@ -132,37 +211,15 @@ function Dashboard() {
           <div className="db-chart-grid">
             <div className="db-chart-card">
               <div className="db-chart-title">Posting Activity (Last 6 Months)</div>
-              <div className="db-activity-chart">
-                {monthlyActivity.map((month, i) => (
-                  <div key={month.key} className="db-activity-bar">
-                    <span className="db-activity-bar-value">{month.count}</span>
-                    <div className="db-activity-bar-track">
-                      <div 
-                        className={`db-activity-bar-fill ${i % 3 === 0 ? 'lime' : i % 3 === 1 ? 'orange' : 'sky'}`}
-                        style={{ height: `${month.height}%` }}
-                      />
-                    </div>
-                    <span className="db-activity-bar-label">{month.label}</span>
-                  </div>
-                ))}
+              <div className="chart-container" style={{ height: '180px' }}>
+                <Bar data={activityChartData} options={chartOptions} />
               </div>
             </div>
 
             <div className="db-chart-card">
-              <div className="db-chart-title">Content Distribution</div>
-              <div className="db-donut-chart">
-                <div className="db-donut-ring" style={{ background: `conic-gradient(${typeBreakdown.map((t, i) => `${t.color} 0 ${t.percent}%`).join(', ')})` }}>
-                  <div className="db-donut-center">{stats.posts}</div>
-                </div>
-                <div className="db-donut-legend">
-                  {typeBreakdown.map(item => (
-                    <div key={item.type} className="db-donut-legend-item">
-                      <span className="db-donut-legend-dot" style={{ background: item.color }} />
-                      <span>{item.label}</span>
-                      <span className="db-donut-legend-value">{item.percent}%</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="db-chart-title">Top 3 Subjects by Posts</div>
+              <div className="chart-container" style={{ height: '180px' }}>
+                <Doughnut data={subjectChartData} options={doughnutOptions} />
               </div>
             </div>
           </div>
