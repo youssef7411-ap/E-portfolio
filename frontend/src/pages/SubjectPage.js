@@ -25,7 +25,6 @@ function SubjectPage({ darkMode, setDarkMode }) {
   const [filterType, setFilterType] = useState('');
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(true);
-  const reduceMotion = useReducedMotion();
 
   const semesterLabel = (value) => {
     if (value === 'first') return 'First Semester';

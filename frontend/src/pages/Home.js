@@ -63,12 +63,6 @@ const itemVariants = {
   },
 };
 
-const formatDate = (value, options) => {
-  const timestamp = new Date(value || 0).getTime();
-  if (!Number.isFinite(timestamp) || timestamp <= 0) return 'Not available';
-  return new Date(timestamp).toLocaleDateString('en-US', options);
-};
-
 const getSubjectId = (post) => post?.subject_id?._id || post?.subject_id || null;
 
 const getPostTimestamp = (post) => {
@@ -217,21 +211,6 @@ function Home() {
 
   const totalProjects = useMemo(() => posts.filter((post) => post?.type === 'project').length, [posts]);
   const totalAssets = useMemo(() => posts.reduce((sum, post) => sum + getAssetCount(post), 0), [posts]);
-
-  const recentUploads = useMemo(() => postsByRecency.slice(0, 3).map((post) => {
-    const subjectId = String(getSubjectId(post) || '');
-    const subject = post?.subject_id?.name || subjectLookup.get(subjectId)?.name || 'General';
-
-    return {
-      id: post?._id || `${subjectId}-${post?.title || 'post'}`,
-      title: post?.title || 'Untitled post',
-      subject,
-      subjectId,
-      type: formatTypeLabel(post?.type),
-      assetCount: getAssetCount(post),
-      timestamp: getPostTimestamp(post),
-    };
-  }), [postsByRecency, subjectLookup]);
 
   const overviewStats = [
     {
