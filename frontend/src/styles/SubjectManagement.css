@@ -28,7 +28,7 @@
 
 .sm-upload-drop:hover {
   border-color: var(--accent);
-  background: var(--accent-bg);
+  background: var(--accent-glow-sm);
 }
 
 .sm-upload-drop input {
@@ -46,6 +46,217 @@
   aspect-ratio: 16 / 9;
   border-radius: var(--radius);
   overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.sm-upload-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sm-upload-actions {
+  position: absolute;
+  bottom: var(--space-sm);
+  right: var(--space-sm);
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.sm-upload-remove,
+.sm-crop-btn {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all var(--transition);
+}
+
+.sm-upload-remove:hover,
+.sm-crop-btn:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+/* Image Crop Preview */
+.sm-crop-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+.sm-crop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  gap: var(--space-md);
+}
+
+.sm-crop-btn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all var(--transition);
+}
+
+.sm-crop-btn:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+/* Live Preview */
+.sm-preview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.sm-preview-header {
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.sm-preview-header h3 {
+  font-size: 1rem;
+  color: var(--text-2);
+}
+
+.sm-preview-body {
+  padding: var(--space-lg);
+}
+
+.sm-preview-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: var(--space-md);
+}
+
+.sm-preview-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: var(--space-xs);
+}
+
+.sm-preview-desc {
+  font-size: 0.875rem;
+  color: var(--text-3);
+}
+
+/* Form Groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-2);
+}
+
+.toggle-label input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+/* Cropper Modal */
+.sm-crop-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.sm-crop-modal .sm-crop-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.sm-crop-controls {
+  margin-top: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+  max-width: 400px;
+}
+
+.sm-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
+.sm-crop-zoom input {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: var(--bg-3);
+  border-radius: 2px;
+}
+
+.sm-crop-zoom input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.sm-crop-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
 }
 
 .sm-upload-preview img {

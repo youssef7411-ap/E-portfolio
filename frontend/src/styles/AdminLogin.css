@@ -1,157 +1,104 @@
 .crystal-lamp-page {
   min-height: 100vh;
   padding: 32px 20px 100px;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(132, 214, 255, 0.18), transparent 34%),
-    radial-gradient(circle at 84% 24%, rgba(243, 207, 93, 0.12), transparent 36%),
-    linear-gradient(135deg, #101a34 0%, #162a4d 54%, #101b35 100%);
-  background-size: 400% 400%;
-  animation: gradientMove 15s ease infinite, fadeIn 0.8s ease forwards;
-  font-family: var(--font-main);
+  background: #0a0a0a;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(30, 30, 30, 0.8) 0%, transparent 60%),
+    linear-gradient(180deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%);
+  font-family: 'Manrope', var(--font-main);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   overflow: hidden;
   opacity: 0;
+  animation: pageFadeIn 0.6s ease forwards;
 }
 
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes fadeIn {
+@keyframes pageFadeIn {
   to { opacity: 1; }
 }
 
-.crystal-lamp-page .parallax-layer {
+.crystal-lamp-page::before {
+  content: '';
   position: absolute;
-  inset: -100px;
-  pointer-events: none;
-  z-index: 1;
-  will-change: transform;
-}
-
-.crystal-lamp-page .bg-dots {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-.crystal-lamp-page .particle-layer {
-  position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  background: 
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
   pointer-events: none;
-  z-index: 1;
-  mix-blend-mode: screen;
-  contain: strict;
 }
 
-.crystal-lamp-page .prism-field {
-  position: absolute;
-  right: clamp(28px, 8vw, 140px);
-  top: clamp(60px, 12vh, 120px);
-  width: clamp(170px, 20vw, 250px);
-  height: clamp(160px, 23vh, 250px);
-  pointer-events: none;
-  z-index: 2;
-  will-change: transform;
-}
-
-.crystal-lamp-page .prism-crystal {
+.crystal-lamp-page::after {
+  content: '';
   position: absolute;
   top: 0;
-  right: 0;
-  width: 92px;
-  height: 72px;
-  clip-path: polygon(11% 24%, 40% 6%, 82% 14%, 95% 50%, 74% 86%, 28% 91%, 8% 62%);
-  background: linear-gradient(145deg, rgba(228, 236, 252, 0.82), rgba(161, 179, 212, 0.72));
-  border: 1px solid rgba(244, 247, 255, 0.38);
-  filter: drop-shadow(0 0 10px rgba(180, 204, 255, 0.2));
-}
-
-.crystal-lamp-page .prism-ray {
-  position: absolute;
-  right: 64px;
-  top: 58px;
-  height: 130px;
-  border-radius: 999px;
-  transform: translateX(var(--prism-shift, 0px));
-  transition: transform 0.28s ease-in-out, opacity 0.28s ease-in-out;
-}
-
-.crystal-lamp-page .prism-ray-a {
-  width: 2px;
-  background: linear-gradient(180deg, rgba(255, 225, 138, 0.7), rgba(255, 225, 138, 0));
-  opacity: 0.7;
-}
-
-.crystal-lamp-page .prism-ray-b {
-  width: 3px;
-  right: 54px;
-  height: 112px;
-  background: linear-gradient(180deg, rgba(129, 225, 255, 0.58), rgba(129, 225, 255, 0));
-  opacity: 0.56;
-}
-
-.crystal-lamp-page .floating-orb {
-  position: absolute;
   left: 50%;
-  top: calc(50% - 210px);
-  width: 92px;
-  height: 92px;
-  margin-left: 150px;
-  z-index: 2;
+  width: 600px;
+  height: 600px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.04) 0%, transparent 60%);
   pointer-events: none;
-  transition: transform 0.1s ease-out, filter 0.45s ease-in-out;
-  will-change: transform;
-}
-
-.crystal-lamp-page .orb-core {
-  position: absolute;
-  inset: 18px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(186, 230, 255, 0.95), rgba(114, 193, 255, 0.38) 56%, rgba(255, 214, 94, 0.18) 100%);
-}
-
-.crystal-lamp-page .orb-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(156, 227, 255, 0.45);
-  box-shadow: inset 0 0 18px rgba(156, 227, 255, 0.14);
-}
-
-.crystal-lamp-page .orb-trail {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: -22px;
-  height: 52px;
-  background: linear-gradient(180deg, rgba(255, 222, 120, 0.28), rgba(255, 222, 120, 0));
-  filter: blur(10px);
-  opacity: 0.7;
 }
 
 .crystal-lamp-page .main-container {
-  width: min(460px, 92vw);
+  width: min(400px, 92vw);
   z-index: 3;
   position: relative;
 }
 
+.crystal-lamp-page .login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.crystal-lamp-page .login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.crystal-lamp-page .login-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffd84f, #ffbf38);
+  border-radius: 8px;
+  font-weight: 700;
+  color: #0a0a0a;
+  font-size: 14px;
+}
+
+.crystal-lamp-page .login-title {
+  font-family: 'Bungee', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.crystal-lamp-page .login-subtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.04em;
+}
+
 .crystal-lamp-page .glass-box {
   width: 100%;
-  padding: 38px 32px;
-  border-radius: 22px;
-  background: linear-gradient(145deg, rgba(255, 215, 0, 0.05), rgba(255, 170, 50, 0.03));
-  border: 1px solid rgba(255, 215, 0, 0.26);
-  backdrop-filter: blur(12px); /* Reduced from 20px */
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 226, 125, 0.14);
+  padding: 40px 36px;
+  border-radius: 16px;
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 24px 48px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
   position: relative;
   overflow: hidden;
   will-change: transform;
@@ -168,58 +115,46 @@
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
-.crystal-lamp-page .input-group {
-  margin-bottom: 22px;
-  position: relative;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: slideIn 0.5s ease forwards;
+.crystal-lamp-page .form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.crystal-lamp-page .staggered-1 { animation-delay: 0.1s; }
-.crystal-lamp-page .staggered-2 { animation-delay: 0.2s; }
-.crystal-lamp-page .staggered-3 { animation-delay: 0.3s; }
-.crystal-lamp-page .staggered-4 { animation-delay: 0.4s; }
-
-@keyframes slideIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.crystal-lamp-page .input-group {
+  position: relative;
 }
 
 .crystal-lamp-page .input-group label {
-  position: absolute;
-  left: 0;
-  top: 12px;
-  font-size: 1rem;
-  color: var(--text-3);
-  pointer-events: none;
-  transition: all 0.3s ease;
-}
-
-.crystal-lamp-page .input-group input:focus ~ label,
-.crystal-lamp-page .input-group.filled label {
-  top: -16px;
-  font-size: 0.8rem;
-  color: var(--accent);
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
 .crystal-lamp-page .input-group input {
   width: 100%;
-  padding: 12px 0;
-  border: none;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.4);
-  background: transparent;
-  color: var(--text);
-  font-size: 1.02rem;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+  font-size: 0.95rem;
   font-weight: 500;
   outline: none;
-  transition: border-color 0.25s ease;
+  transition: all 0.25s ease;
 }
 
-.crystal-lamp-page .input-group.focused input {
-  border-bottom-color: var(--accent);
+.crystal-lamp-page .input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.crystal-lamp-page .input-group input:focus {
+  border-color: #ffd84f;
+  background: rgba(255, 216, 79, 0.05);
 }
 
 .crystal-lamp-page .password-wrapper {
@@ -228,16 +163,20 @@
   align-items: center;
 }
 
+.crystal-lamp-page .password-wrapper input {
+  padding-right: 48px;
+}
+
 .crystal-lamp-page .toggle-password {
   position: absolute;
-  right: 0;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--text-3);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,50 +185,10 @@
 }
 
 .crystal-lamp-page .toggle-password:hover {
-  color: var(--accent);
-}
-
-.crystal-lamp-page .strength-container {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.crystal-lamp-page .strength-bar {
-  flex: 1;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  position: relative;
-  overflow: hidden;
-}
-
-.crystal-lamp-page .strength-bar::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 0;
-  transition: width 0.3s ease, background-color 0.3s ease;
-}
-
-.crystal-lamp-page .strength-0::after { width: 0%; }
-.crystal-lamp-page .strength-1::after { width: 20%; background: #ff4d4d; }
-.crystal-lamp-page .strength-2::after { width: 40%; background: #ff944d; }
-.crystal-lamp-page .strength-3::after { width: 60%; background: #ffd24d; }
-.crystal-lamp-page .strength-4::after { width: 80%; background: #d2ff4d; }
-.crystal-lamp-page .strength-5::after { width: 100%; background: #4dff88; }
-
-.crystal-lamp-page .strength-label {
-  font-size: 0.75rem;
-  color: var(--text-3);
-  min-width: 60px;
+  color: #ffd84f;
 }
 
 .crystal-lamp-page .form-options {
-  margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -298,11 +197,10 @@
 .crystal-lamp-page .checkbox-container {
   display: flex;
   align-items: center;
-  position: relative;
-  padding-left: 28px;
+  gap: 10px;
   cursor: pointer;
   font-size: 0.85rem;
-  color: var(--text-2);
+  color: rgba(255, 255, 255, 0.5);
   user-select: none;
 }
 
@@ -315,54 +213,60 @@
 }
 
 .crystal-lamp-page .checkmark {
-  position: absolute;
-  left: 0;
-  height: 18px;
   width: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
 }
 
 .crystal-lamp-page .checkbox-container:hover input ~ .checkmark {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent);
+  border-color: rgba(255, 216, 79, 0.5);
 }
 
 .crystal-lamp-page .checkbox-container input:checked ~ .checkmark {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #ffd84f;
+  border-color: #ffd84f;
 }
 
 .crystal-lamp-page .checkmark:after {
   content: "";
-  position: absolute;
   display: none;
-  left: 5px;
-  top: 2px;
   width: 5px;
-  height: 10px;
-  border: solid #111626;
+  height: 9px;
+  border: solid #0a0a0a;
   border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  transform: rotate(45deg) translateY(-1px);
 }
 
 .crystal-lamp-page .checkbox-container input:checked ~ .checkmark:after {
   display: block;
 }
 
+.crystal-lamp-page .error {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  animation: shake 0.4s ease;
+}
+
 .crystal-lamp-page .gold-btn {
   width: 100%;
   margin-top: 8px;
-  padding: 14px 18px;
+  padding: 16px 24px;
   border: none;
   border-radius: 10px;
   background: linear-gradient(135deg, #ffd84f, #ffbf38);
-  color: #111626;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  color: #0a0a0a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   position: relative;
@@ -370,56 +274,30 @@
   transition: all 0.3s ease;
 }
 
-.crystal-lamp-page .btn-progress {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.2);
-  transition: width 1.5s ease-in;
+.crystal-lamp-page .gold-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 216, 79, 0.3);
 }
 
-.crystal-lamp-page .btn-content {
+.crystal-lamp-page .gold-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.crystal-lamp-page .gold-btn .btn-content {
   position: relative;
   z-index: 1;
-}
-
-.crystal-lamp-page .ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
-  transform: scale(0);
-  animation: rippleEffect 0.6s linear;
-  pointer-events: none;
-}
-
-@keyframes rippleEffect {
-  to {
-    transform: scale(4);
-    opacity: 0;
-  }
-}
-
-.crystal-lamp-page .gold-btn.btn-loading {
-  width: 50px;
-  height: 50px;
-  padding: 0;
-  border-radius: 50%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.crystal-lamp-page .loading-content {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 }
 
-.crystal-lamp-page .spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(17, 22, 38, 0.3);
-  border-top-color: #111626;
+.crystal-lamp-page .btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(10, 10, 10, 0.3);
+  border-top-color: #0a0a0a;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -431,51 +309,45 @@
 .crystal-lamp-page .success-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(16, 26, 52, 0.95);
+  background: rgba(10, 10, 10, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  animation: fadeIn 0.3s ease forwards;
+  animation: fadeIn 0.4s ease forwards;
 }
 
-.crystal-lamp-page .success-checkmark {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 20px;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.crystal-lamp-page .checkmark-circle {
-  stroke-dasharray: 166;
-  stroke-dashoffset: 166;
-  stroke-width: 2;
-  stroke-miterlimit: 10;
-  stroke: var(--accent);
-  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+.crystal-lamp-page .success-content {
+  text-align: center;
 }
 
-.crystal-lamp-page .checkmark-check {
-  transform-origin: 50% 50%;
-  stroke-dasharray: 48;
-  stroke-dashoffset: 48;
-  stroke: var(--accent);
-  stroke-width: 3;
-  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+.crystal-lamp-page .success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd84f, #ffbf38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes stroke {
-  to { stroke-dashoffset: 0; }
+.crystal-lamp-page .success-icon svg {
+  width: 28px;
+  height: 28px;
+  color: #0a0a0a;
 }
 
-.crystal-lamp-page .error {
-  margin-bottom: 12px;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #ffd2d2;
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+.crystal-lamp-page .success-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .crystal-lamp-page .admin-login-footer {
@@ -485,13 +357,30 @@
   transform: translateX(-50%);
   text-align: center;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crystal-lamp-page .admin-footer-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.crystal-lamp-page .admin-footer-signature {
+  font-family: 'Bungee', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.04em;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crystal-lamp-page, 
-  .crystal-lamp-page .parallax-layer,
+  .crystal-lamp-page,
   .crystal-lamp-page .glass-box,
-  .crystal-lamp-page .input-group,
   .crystal-lamp-page .gold-btn {
     animation: none !important;
     transition: none !important;
@@ -499,26 +388,17 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 480px) {
   .crystal-lamp-page {
-    padding: 24px 14px 88px;
-  }
-
-  .crystal-lamp-page .floating-orb {
-    top: 42px;
-    margin-left: 90px;
-    transform: scale(0.9);
+    padding: 20px 14px 80px;
   }
 
   .crystal-lamp-page .glass-box {
-    padding: 30px 20px;
-    border-radius: 18px;
+    padding: 32px 24px;
+    border-radius: 14px;
   }
 
-  .crystal-lamp-page .prism-field {
-    right: 6px;
-    top: 54px;
-    transform: scale(0.88);
-    transform-origin: top right;
+  .crystal-lamp-page .login-title {
+    font-size: 1.3rem;
   }
 }

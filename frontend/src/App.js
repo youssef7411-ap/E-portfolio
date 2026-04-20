@@ -336,6 +336,7 @@ function App({ darkMode, setDarkMode }) {
                 ? `Loading graphics ${preloadProgress.loaded}/${preloadProgress.total}`
                 : 'Loading graphics...'}
             </motion.div>
+            <div className="boot-spinner" />
           </motion.div>
         </div>
         <div className="boot-progress" aria-hidden="true" />

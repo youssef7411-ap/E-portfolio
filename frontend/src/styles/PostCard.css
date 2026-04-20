@@ -1,21 +1,20 @@
 /* ─── Post Card ─────────────────────────────────────────────── */
 .pc {
-  padding: 16px;
+  padding: var(--space-lg);
   border-radius: var(--radius-lg);
-  background: var(--bg-glass);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
+  background: var(--surface);
   border: 1px solid var(--border);
   overflow: hidden;
-  box-shadow: var(--shadow-glass);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition);
   display: flex;
   flex-direction: column;
 }
 
 .pc:hover {
-  border-color: rgba(251, 191, 36, 0.3);
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-glow-sm);
+  transform: translateY(-2px);
 }
 
 .pc {
@@ -40,14 +39,26 @@
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.625rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-2);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-2);
   border: 1px solid var(--border);
+}
+
+.pc-tag.type-project {
+  background: var(--lime-glow);
+  color: var(--lime);
+  border-color: var(--lime-glow);
+}
+
+.pc-tag.type-note {
+  background: var(--sky-glow);
+  color: var(--sky);
+  border-color: var(--sky-glow);
 }
 
 .pc-date {
@@ -65,7 +76,7 @@
 }
 
 .pc:hover .pc-title {
-  color: rgba(251, 191, 36, 0.95);
+  color: var(--accent);
 }
 
 /* Rich text description */

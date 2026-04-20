@@ -3,22 +3,32 @@ import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-
 import SubjectManagement from './pages/SubjectManagement';
 import PostManagement from './pages/PostManagement';
 import Dashboard from './pages/Dashboard';
+import Emailing from './pages/Emailing';
 import AdminCrashGuard from '../components/AdminCrashGuard';
 import '../styles/Admin.css';
 
 const NAV = [
-  { id: 'dashboard', label: 'Dashboard',  icon: '📊', path: '/admin' },
-  { id: 'subjects',  label: 'Subjects',   icon: '📂', path: '/admin/subjects' },
-  { id: 'posts',     label: 'Posts',      icon: '📝', path: '/admin/posts' },
+  { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/admin' },
+  { id: 'subjects', label: 'Subjects', icon: '📂', path: '/admin/subjects' },
+  { id: 'posts', label: 'Posts', icon: '📝', path: '/admin/posts' },
+  { id: 'emailing', label: 'Emailing', icon: '✉️', path: '/admin/emailing' },
 ];
 
 function AdminDashboard({ setIsAdmin }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editMode, setEditMode] = useState(() => {
+    return localStorage.getItem('editMode') === 'true';
+  });
 
   // Close sidebar on route change (mobile)
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
+
+  // Save edit mode preference
+  useEffect(() => {
+    localStorage.setItem('editMode', editMode);
+  }, [editMode]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -59,6 +69,19 @@ function AdminDashboard({ setIsAdmin }) {
           ))}
         </nav>
 
+        <div className="admin-sidebar-section">
+          <div className="edit-mode-toggle">
+            <span className="edit-mode-label">Edit Mode</span>
+            <button 
+              className={`toggle-switch ${editMode ? 'on' : ''}`}
+              onClick={() => setEditMode(!editMode)}
+              aria-pressed={editMode}
+            >
+              <span className="toggle-knob" />
+            </button>
+          </div>
+        </div>
+
         <div className="admin-sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
             ↩ Logout
@@ -75,15 +98,19 @@ function AdminDashboard({ setIsAdmin }) {
           <span className="admin-topbar-title">
             {NAV.find(n => n.id === activeNav)?.label}
           </span>
+          <div className="edit-mode-indicator" data-active={editMode}>
+            {editMode ? 'Editing' : 'Viewing'}
+          </div>
         </header>
 
         <main className="admin-content">
           <AdminCrashGuard>
             <Routes>
-              <Route index             element={<Dashboard />} />
-              <Route path="subjects"  element={<SubjectManagement />} />
-              <Route path="posts"     element={<PostManagement />} />
-              <Route path="*"         element={<Navigate to="/admin" replace />} />
+              <Route index element={<Dashboard />} />
+              <Route path="subjects" element={<SubjectManagement />} />
+              <Route path="posts" element={<PostManagement />} />
+              <Route path="emailing" element={<Emailing />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </AdminCrashGuard>
         </main>

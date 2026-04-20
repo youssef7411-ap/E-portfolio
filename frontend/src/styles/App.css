@@ -36,13 +36,13 @@
   text-align: center;
 }
 
-/* Signature pen animation container */
-.signature-pen {
-  width: 100%;
-  max-width: 600px;
+.boot-signature-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 
-/* "Portfolio" subtitle below the pen animation */
 .boot-signature-gold {
   font-family: 'Bungee', sans-serif;
   font-size: clamp(90px, 22vw, 160px);
@@ -50,7 +50,7 @@
   color: #ffffff;
   letter-spacing: 0.05em;
   line-height: 0.85;
-  margin: 0 0 0.3em 0;
+  margin: 0;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   animation: signatureSharpZoom 1.2s cubic-bezier(0.25, 0.1, 0.25, 1.2) 0.5s both;
@@ -77,7 +77,7 @@
 }
 
 .boot-preload-status {
-  margin-top: 4px;
+  margin-top: 24px;
   font-family: var(--font-main);
   font-size: clamp(0.68rem, 1.2vw, 0.82rem);
   font-weight: 700;
@@ -85,6 +85,22 @@
   text-transform: uppercase;
   color: #ffffff;
   opacity: 0.4;
+}
+
+.boot-spinner {
+  width: 28px;
+  height: 28px;
+  margin-top: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: bootSpin 0.9s linear infinite;
+}
+
+@keyframes bootSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Thin progress line at the bottom */

@@ -125,12 +125,6 @@ function Home() {
     [...posts].sort((a, b) => getPostTimestamp(b) - getPostTimestamp(a))
   ), [posts]);
 
-  const featuredProjects = useMemo(() => (
-    postsByRecency
-      .filter((post) => post?.title && post?.type === 'project')
-      .slice(0, 3)
-  ), [postsByRecency]);
-
   const subjectMeta = useMemo(() => {
     const map = new Map();
 
@@ -333,9 +327,28 @@ function Home() {
             </motion.p>
           </motion.div>
 
-          <div className="header-status-pill">
-            <span className="header-status-dot" />
-            {loading ? 'Syncing data' : `${uploadsThisMonth} uploads this month`}
+          <div className="header-right">
+            <button 
+              className="theme-toggle"
+              onClick={() => setDarkMode(!darkMode)}
+              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? 'Light mode' : 'Dark mode'}
+            >
+              {darkMode ? (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              )}
+            </button>
+            <div className="header-status-pill">
+              <span className="header-status-dot" />
+              {loading ? 'Syncing data' : `${uploadsThisMonth} uploads this month`}
+            </div>
           </div>
         </div>
       </header>
@@ -535,58 +548,6 @@ function Home() {
 
       <main className="home-main">
         <div className="container">
-          <motion.section
-            className="home-panel glass"
-            variants={containerVariants}
-            initial={prefersReducedMotion ? false : 'hidden'}
-            animate={prefersReducedMotion ? undefined : 'visible'}
-          >
-            <div className="home-section-head">
-              <h3>Highlighted Projects</h3>
-              <span>{featuredProjects.length} highlighted</span>
-            </div>
-
-            {loading ? (
-              <div className="section-loading">
-                <div className="spinner" />
-              </div>
-            ) : featuredProjects.length === 0 ? (
-              <p className="empty-state">No featured projects yet.</p>
-            ) : (
-              <div className="featured-grid">
-                {featuredProjects.map((project, index) => {
-                  const subjectId = getSubjectId(project);
-                  const subjectName = project?.subject_id?.name || subjectLookup.get(String(subjectId || ''))?.name || 'General';
-
-                  return (
-                    <motion.article
-                      key={project._id}
-                      className="featured-card glass"
-                      variants={itemVariants}
-                      custom={index}
-                      initial={prefersReducedMotion ? false : 'hidden'}
-                      animate={prefersReducedMotion ? undefined : 'visible'}
-                      whileHover={prefersReducedMotion ? undefined : { y: -4, scale: 1.01, transition: { duration: 0.18 } }}
-                      whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
-                      onClick={() => subjectId && navigate(`/subject/${subjectId}`)}
-                    >
-                      <div className="featured-top">
-                        <span className="badge badge-gray">{subjectName}</span>
-                        <time className="featured-date">
-                          {formatDate(project.date_created, { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </time>
-                      </div>
-                      <h4 className="featured-title">{project.title}</h4>
-                      <p className="featured-desc">
-                        {stripHtml(project.description).slice(0, 140) || 'Open this project to view details, media, and files.'}
-                      </p>
-                    </motion.article>
-                  );
-                })}
-              </div>
-            )}
-          </motion.section>
-
           <motion.section
             ref={subjectsSectionRef}
             className="home-panel glass"

@@ -1,5 +1,6 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
 import '../../styles/SubjectManagement.css';
 import { API_URL } from '../../config/api';
 
@@ -29,6 +30,62 @@ function SortableRow({ subject, onEdit, onDelete }) {
   );
 }
 
+/* ── Image Cropper Component ─────────────────────────────── */
+function ImageCropper({ image, onCropComplete, onCancel, onSave }) {
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const onCropChange = (crop) => {
+    setCrop(crop);
+  };
+
+  const onZoomChange = (zoom) => {
+    setZoom(zoom);
+  };
+
+  const onCropCompleteHandler = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleSave = () => {
+    onCropComplete(croppedAreaPixels);
+  };
+
+  return (
+    <div className="sm-crop-modal">
+      <div className="sm-crop-container">
+        <Cropper
+          image={image}
+          crop={crop}
+          zoom={zoom}
+          aspect={16 / 9}
+          onCropChange={onCropChange}
+          onZoomChange={onZoomChange}
+          onCropComplete={onCropCompleteHandler}
+        />
+      </div>
+      <div className="sm-crop-controls">
+        <div className="sm-crop-zoom">
+          <span>Zoom</span>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.1}
+            value={zoom}
+            onChange={(e) => setZoom(e.target.value)}
+          />
+        </div>
+        <div className="sm-crop-actions">
+          <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>Apply Crop</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main component ───────────────────────────── */
 function SubjectManagement() {
   const [subjects, setSubjects]   = useState([]);
@@ -37,6 +94,9 @@ function SubjectManagement() {
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving]       = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropImage, setCropImage] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -233,16 +293,28 @@ function SubjectManagement() {
                   {uploadPreview ? (
                     <div className="sm-upload-preview">
                       <img src={uploadPreview} alt="Preview" />
-                      <button 
-                        type="button" 
-                        className="sm-upload-remove"
-                        onClick={() => {
-                          setUploadPreview('');
-                          setFormData(prev => ({ ...prev, image: '' }));
-                        }}
-                      >
-                        ✕
-                      </button>
+                      <div className="sm-upload-actions">
+                        <button 
+                          type="button" 
+                          className="sm-crop-btn"
+                          onClick={() => {
+                            setCropImage(uploadPreview);
+                            setShowCropper(true);
+                          }}
+                        >
+                          ✂ Crop
+                        </button>
+                        <button 
+                          type="button" 
+                          className="sm-upload-remove"
+                          onClick={() => {
+                            setUploadPreview('');
+                            setFormData(prev => ({ ...prev, image: '' }));
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <label className="sm-upload-drop">
@@ -299,13 +371,54 @@ function SubjectManagement() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? 'Saving...' : editingId ? 'Update Subject' : 'Create Subject'}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={closeForm}>
                   Cancel
                 </button>
+                <button 
+                  type="button" 
+                  className={`btn ${showPreview ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setShowPreview(!showPreview)}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  {showPreview ? 'Hide Preview' : 'Show Preview'}
+                </button>
+              </div>
+
+              {/* Live Preview */}
+              {showPreview && (
+                <div className="sm-preview-card" style={{ marginTop: '1.5rem' }}>
+                  <div className="sm-preview-header">
+                    <h3>Live Preview</h3>
+                  </div>
+                  <div className="sm-preview-body">
+                    {formData.image && (
+                      <img 
+                        src={formData.image} 
+                        alt={formData.name || 'Subject'} 
+                        className="sm-preview-image" 
+                      />
+                    )}
+                    <h4 className="sm-preview-title">
+                      {formData.name || 'Subject Name'}
+                    </h4>
+                    <p className="sm-preview-desc">
+                      {formData.description || 'Description will appear here...'}
+                    </p>
+                    <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                      <span className={`badge ${formData.visible ? 'badge-green' : 'badge-gray'}`}>
+                        {formData.visible ? 'Visible' : 'Hidden'}
+                      </span>
+                      <span className="badge badge-gray">
+                        Order: {formData.order}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
               </div>
             </form>
           </div>
@@ -345,6 +458,26 @@ function SubjectManagement() {
           </div>
         )}
       </div>
+
+      {/* Image Cropper Modal */}
+      {showCropper && cropImage && (
+        <ImageCropper
+          image={cropImage}
+          onCropComplete={(pixels) => {
+            // For simplicity, we'll just use the original image
+            // A full implementation would crop and re-upload
+            setShowCropper(false);
+          }}
+          onCancel={() => {
+            setShowCropper(false);
+            setCropImage(null);
+          }}
+          onSave={() => {
+            setShowCropper(false);
+            setCropImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }

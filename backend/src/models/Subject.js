@@ -15,6 +15,36 @@ const subjectSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  preview: {
+    badge: {
+      type: String,
+      default: '',
+    },
+    title: {
+      type: String,
+      default: '',
+    },
+    description: {
+      type: String,
+      default: '',
+    },
+    showImage: {
+      type: Boolean,
+      default: true,
+    },
+    showDescription: {
+      type: Boolean,
+      default: true,
+    },
+    showStats: {
+      type: Boolean,
+      default: true,
+    },
+    showCta: {
+      type: Boolean,
+      default: true,
+    },
+  },
   visible: {
     type: Boolean,
     default: true

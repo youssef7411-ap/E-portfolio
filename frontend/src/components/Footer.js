@@ -2,8 +2,14 @@ import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import '../styles/Footer.css';
 
-const Footer = ({ darkMode }) => {
+const defaultFooterContent = {
+  signature: 'Curated by Youssef',
+  copy: 'E-Portfolio'
+};
+
+const Footer = ({ darkMode, content }) => {
   const prefersReducedMotion = useReducedMotion();
+  const footerContent = { ...defaultFooterContent, ...content };
 
   const signatureVariants = {
     hidden: { strokeDashoffset: 4500, fill: 'transparent' },
@@ -51,13 +57,13 @@ const Footer = ({ darkMode }) => {
                 strokeDasharray="4500"
                 strokeDashoffset="4500"
               >
-                Curated by Youssef
+                {footerContent.signature}
               </text>
             </svg>
           </motion.div>
           
           <p className="footer-copy">
-            Curated by Youssef · &copy; {new Date().getFullYear()} E-Portfolio
+            {footerContent.signature} · &copy; {new Date().getFullYear()} {footerContent.copy}
           </p>
         </div>
       </div>

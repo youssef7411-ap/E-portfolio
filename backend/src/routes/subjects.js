@@ -5,6 +5,29 @@ import authenticate from '../middleware/authenticate.js';
 import { cleanupOrphanedUploads } from '../utils/cleanupUploads.js';
 import TeacherEmail from '../models/TeacherEmail.js';
 import PortfolioMeta from '../models/PortfolioMeta.js';
+
+const sanitizePreview = (preview = {}) => {
+  const source = preview && typeof preview === 'object' && !Array.isArray(preview) ? preview : {};
+  return {
+    badge: String(source.badge ?? '').slice(0, 80),
+    title: String(source.title ?? '').slice(0, 120),
+    description: String(source.description ?? '').slice(0, 280),
+    showImage: source.showImage !== false,
+    showDescription: source.showDescription !== false,
+    showStats: source.showStats !== false,
+    showCta: source.showCta !== false,
+  };
+};
+
+const sanitizeSubjectPayload = (body = {}) => ({
+  name: String(body.name ?? '').trim(),
+  description: String(body.description ?? ''),
+  image: String(body.image ?? ''),
+  visible: body.visible !== false,
+  order: Number(body.order) || 0,
+  preview: sanitizePreview(body.preview),
+});
+
 // Helper: update last updated timestamp
 async function updateLastUpdated() {
   await PortfolioMeta.findOneAndUpdate({}, { lastUpdated: new Date() }, { upsert: true });
@@ -36,13 +59,13 @@ router.get('/:id', async (req, res) => {
 // Create subject (protected)
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { name, description, image, visible } = req.body;
+    const payload = sanitizeSubjectPayload(req.body);
+    if (!payload.name) {
+      return res.status(400).json({ message: 'Subject name is required.' });
+    }
 
     const subject = new Subject({
-      name,
-      description: description ?? '',
-      image: image ?? '',
-      visible: visible ?? true,
+      ...payload,
     });
 
     await subject.save();
@@ -56,9 +79,10 @@ router.post('/', authenticate, async (req, res) => {
 // Update subject (protected)
 router.put('/:id', authenticate, async (req, res) => {
   try {
+    const payload = sanitizeSubjectPayload(req.body);
     const subject = await Subject.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      payload,
       { new: true, runValidators: true }
     );
     if (!subject) return res.status(404).json({ message: 'Subject not found' });
@@ -126,8 +150,12 @@ router.get('/:id/teacher-email', async (req, res) => {
 // Update teacher email for subject
 router.put('/:id/teacher-email', authenticate, async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email required' });
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    if (!email) {
+      await TeacherEmail.deleteOne({ subject: req.params.id });
+      await updateLastUpdated();
+      return res.json({ email: '' });
+    }
     const record = await TeacherEmail.findOneAndUpdate(
       { subject: req.params.id },
       { email, updatedAt: new Date() },

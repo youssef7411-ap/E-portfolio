@@ -97,10 +97,11 @@
 }
 
 .sp-back-btn:hover {
-  background: var(--bg-3);
+  background: var(--accent-glow-sm);
   border-color: var(--accent);
   color: var(--accent);
   transform: translateX(-2px);
+  box-shadow: var(--shadow-glow-sm);
 }
 
 .sp-subject-info {
@@ -128,13 +129,13 @@
 }
 
 .sp-badge {
-  background: var(--accent-bg);
+  background: var(--accent-glow-sm);
   color: var(--accent);
   padding: 0.375rem 1rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 700;
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border: 1px solid var(--accent-glow-sm);
 }
 
 .sp-view-toggle {
