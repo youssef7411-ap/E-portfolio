@@ -204,6 +204,20 @@
   color: var(--accent);
 }
 
+.crystal-lamp-page .forgot-btn {
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition);
+}
+
+.crystal-lamp-page .forgot-btn:hover {
+  color: var(--accent);
+}
+
 .crystal-lamp-page .checkbox-container {
   display: flex;
   align-items: center;

@@ -139,9 +139,9 @@ function CrystalLampLogin({ setIsAdmin }) {
                 <span className="checkmark"></span>
                 Remember me
               </label>
-              <a href="javascript:void(0)" className="forgot-link" onClick={(e) => { e.preventDefault(); alert('Forgot password feature coming soon.'); }}>
+              <button type="button" className="forgot-btn" onClick={() => alert('Forgot password feature coming soon.')}>
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             {error && <div className="error" role="alert">{error}</div>}
