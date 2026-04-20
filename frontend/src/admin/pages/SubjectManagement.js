@@ -419,7 +419,6 @@ function SubjectManagement() {
                   </div>
                 </div>
               )}
-              </div>
             </form>
           </div>
         </div>
