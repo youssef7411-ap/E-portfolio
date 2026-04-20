@@ -37,9 +37,16 @@ function SubjectManagement() {
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving]       = useState(false);
-  const [formData, setFormData]   = useState({
+  const [formData, setFormData] = useState({
     name: '',
+    description: '',
+    image: '',
+    visible: true,
+    order: 0,
   });
+  const [uploadPreview, setUploadPreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => { fetchSubjects(); }, []);
 
@@ -85,20 +92,69 @@ function SubjectManagement() {
   };
 
   const handleFormChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
+  };
+
+  const handleImageChange = async e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async () => {
+      setUploadPreview(reader.result);
+      await uploadImage(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImage = async file => {
+    setUploading(true);
+    const token = localStorage.getItem('adminToken');
+    const formDataFile = new FormData();
+    formDataFile.append('file', file);
+    
+    try {
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formDataFile,
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({ ...prev, image: data.url }));
+        setUploadError('');
+      } else {
+        setUploadError('Upload failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setUploadError('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '' });
+    setFormData({ name: '', description: '', image: '', visible: true, order: 0 });
+    setUploadPreview('');
     setShowForm(true);
   };
   const openEdit = subject => {
     setEditingId(subject._id);
     setFormData({
       name: subject.name || '',
+      description: subject.description || '',
+      image: subject.image || '',
+      visible: subject.visible !== false,
+      order: subject.order || 0,
     });
+    setUploadPreview(subject.image || '');
     setShowForm(true);
   };
   const closeForm = () => { setShowForm(false); setEditingId(null); };
@@ -111,11 +167,15 @@ function SubjectManagement() {
     const url    = editingId
       ? `${API_URL}/api/subjects/${editingId}`
       : `${API_URL}/api/subjects`;
+    const payload = {
+      ...formData,
+      order: Number(formData.order) || 0,
+    };
     try {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       if (res.ok) { closeForm(); fetchSubjects(); }
     } catch (err) { console.error(err); }
@@ -165,6 +225,78 @@ function SubjectManagement() {
                   required
                   placeholder="e.g., Mathematics 101"
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Cover Image</label>
+                <div className="sm-upload-area">
+                  {uploadPreview ? (
+                    <div className="sm-upload-preview">
+                      <img src={uploadPreview} alt="Preview" />
+                      <button 
+                        type="button" 
+                        className="sm-upload-remove"
+                        onClick={() => {
+                          setUploadPreview('');
+                          setFormData(prev => ({ ...prev, image: '' }));
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="sm-upload-drop">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        disabled={uploading}
+                      />
+                      <span className="sm-upload-label">
+                        {uploading ? 'Uploading...' : 'Click or drag image here'}
+                      </span>
+                    </label>
+                  )}
+                  {uploadError && <p className="sm-upload-error">{uploadError}</p>}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleFormChange}
+                  placeholder="Brief description of this subject..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Order</label>
+                  <input
+                    type="number"
+                    name="order"
+                    value={formData.order}
+                    onChange={handleFormChange}
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Visibility</label>
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      name="visible"
+                      checked={formData.visible}
+                      onChange={handleFormChange}
+                    />
+                    <span className="toggle-switch"></span>
+                    <span>{formData.visible ? 'Visible' : 'Hidden'}</span>
+                  </label>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

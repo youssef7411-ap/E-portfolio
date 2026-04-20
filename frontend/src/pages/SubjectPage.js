@@ -137,6 +137,18 @@ function SubjectPage({ darkMode, setDarkMode }) {
 
   return (
     <div className="sp-page">
+      {/* Hero Banner */}
+      {subject?.image && (
+        <div className="subject-hero-banner">
+          <img src={subject.image} alt={subject.name} />
+          <div className="subject-hero-overlay" />
+          <div className="subject-hero-content">
+            <h1>{subject.name}</h1>
+            {subject.description && <p>{subject.description}</p>}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sp-header">
         <div className="container sp-header-inner">

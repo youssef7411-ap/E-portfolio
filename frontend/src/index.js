@@ -17,6 +17,10 @@ function Root() {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
   if (!mounted) {
     return <div className="fixed inset-0 flex items-center justify-center"><div className="spinner w-12 h-12" /></div>;
   }
