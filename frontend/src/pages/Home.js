@@ -86,10 +86,6 @@ const getAssetCount = (post) => {
   return images + videos + files;
 };
 
-const formatTypeLabel = (type = 'other') => (
-  String(type).charAt(0).toUpperCase() + String(type).slice(1)
-);
-
 function Home() {
   const prefersReducedMotion = useReducedMotion();
   const [subjects, setSubjects] = useState([]);
@@ -160,14 +156,6 @@ function Home() {
   const projectsCount = useCountUp(totalProjects, 1100);
   // eslint-disable-next-line no-use-before-define
   const mediaCount = useCountUp(totalAssets, 1300);
-
-  const subjectLookup = useMemo(() => new Map(
-    subjects.map((subject) => [String(subject?._id || ''), subject]),
-  ), [subjects]);
-
-  const postsByRecency = useMemo(() => (
-    [...posts].sort((a, b) => getPostTimestamp(b) - getPostTimestamp(a))
-  ), [posts]);
 
   const subjectMeta = useMemo(() => {
     const map = new Map();

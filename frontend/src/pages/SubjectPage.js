@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import PostCard from '../components/PostCard';
 import '../styles/SubjectPage.css';
 import { API_URL } from '../config/api';
