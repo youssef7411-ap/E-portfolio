@@ -27,10 +27,13 @@ function SubjectCard({ subject, onClick, meta, variant = 'grid' }) {
             className="sc-image"
             loading="lazy"
           />
+          <div className="sc-image-overlay">
+            <h3 className="sc-overlay-title">{subject.name}</h3>
+          </div>
         </div>
       )}
       <div className="sc-body">
-        <h3 className="sc-title">{subject.name}</h3>
+        {!subject.image && <h3 className="sc-title">{subject.name}</h3>}
         {subject.description && (
           <p className="sc-desc">{subject.description}</p>
         )}

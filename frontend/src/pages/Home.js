@@ -351,7 +351,7 @@ function Home() {
             <div className="dashboard-intro">
               <span className="dashboard-kicker">Portfolio Command Center</span>
               <motion.h2 className="hero-headline">
-                Open the site and understand the work in seconds.
+                Open the site and <span className="handwritten-accent">understand</span> the work in seconds.
               </motion.h2>
               <motion.p className="hero-copy">
                 Recent uploads, total posts, subject activity, and content mix now appear instantly on the main page so the portfolio feels more professional, data-driven, and polished from the first click.
