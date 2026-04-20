@@ -18,10 +18,7 @@
     max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
   overflow: hidden;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(75, 130, 220, 0.18), transparent 34%),
-    radial-gradient(circle at 84% 24%, rgba(255, 214, 94, 0.12), transparent 34%),
-    linear-gradient(135deg, #0f1834 0%, #162a4d 54%, #101b35 100%);
+  background: #000000;
   animation: bootFadeIn 0.28s ease-out both;
 }
 
@@ -50,13 +47,8 @@
   font-family: 'Bungee', sans-serif;
   font-size: clamp(90px, 22vw, 160px);
   font-weight: 900;
-  background: linear-gradient(45deg, #ffe79e 0%, #f3cf5d 45%, #ffbf38 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 0 #FFD700;
-  filter: drop-shadow(0 0 10px rgba(243, 207, 93, 0.35));
-  letter-spacing: 0;
+  color: #ffffff;
+  letter-spacing: 0.05em;
   line-height: 0.85;
   margin: 0 0 0.3em 0;
   image-rendering: -webkit-optimize-contrast;
@@ -67,29 +59,32 @@
 .portfolio-shimmer {
   font-family: 'Manrope', sans-serif;
   font-size: clamp(18px, 3vw, 28px);
-  font-weight: 300;
-  color: #dce2f0;
-  letter-spacing: 4px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 8px;
   text-transform: uppercase;
+  opacity: 0.7;
 }
 
 .boot-curated {
   font-family: var(--font-main);
   font-size: clamp(0.72rem, 1.35vw, 0.9rem);
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(243, 207, 93, 0.88);
+  color: #ffffff;
+  opacity: 0.5;
 }
 
 .boot-preload-status {
   margin-top: 4px;
   font-family: var(--font-main);
   font-size: clamp(0.68rem, 1.2vw, 0.82rem);
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(216, 224, 240, 0.82);
+  color: #ffffff;
+  opacity: 0.4;
 }
 
 /* Thin progress line at the bottom */
@@ -97,17 +92,10 @@
   position: fixed;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 3px;
   width: 0;
-  background: linear-gradient(
-    90deg,
-    var(--accent-boot, rgba(255, 255, 255, 0.8)) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: #ffffff;
   animation: bootProgress 3.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s forwards;
-  border-radius: 0 999px 999px 0;
-  box-shadow: 0 0 16px rgba(243, 207, 93, 0.4);
 }
 
 /* ── Boot Phase-specific Styles ─────────────────────────────── */

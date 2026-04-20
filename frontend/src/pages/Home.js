@@ -70,7 +70,7 @@ const formatTypeLabel = (type = 'other') => (
   String(type).charAt(0).toUpperCase() + String(type).slice(1)
 );
 
-function Home({ darkMode, setDarkMode }) {
+function Home() {
   const prefersReducedMotion = useReducedMotion();
   const [subjects, setSubjects] = useState([]);
   const [posts, setPosts] = useState([]);
