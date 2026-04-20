@@ -5,7 +5,6 @@ import {
   getPublicSiteSettings,
   normalizeSiteSettingsUpdate,
 } from '../utils/siteSettings.js';
-import { getMailerStatus } from '../utils/mailer.js';
 
 const router = express.Router();
 
@@ -21,10 +20,7 @@ router.get('/public', async (req, res) => {
 router.get('/admin', authenticate, async (req, res) => {
   try {
     const settings = await getOrCreateSiteSettings();
-    res.json({
-      ...normalizeSiteSettingsUpdate({}, settings.toObject()),
-      mailer: getMailerStatus(),
-    });
+    res.json(normalizeSiteSettingsUpdate({}, settings.toObject()));
   } catch (error) {
     res.status(500).json({ message: 'Failed to load admin settings' });
   }
@@ -37,10 +33,7 @@ router.put('/', authenticate, async (req, res) => {
     current.set(normalized);
     await current.save();
 
-    res.json({
-      ...normalizeSiteSettingsUpdate({}, current.toObject()),
-      mailer: getMailerStatus(),
-    });
+    res.json(normalizeSiteSettingsUpdate({}, current.toObject()));
   } catch (error) {
     res.status(400).json({ message: error.message || 'Failed to save settings' });
   }
