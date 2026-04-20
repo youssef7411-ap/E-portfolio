@@ -139,23 +139,6 @@ function Dashboard() {
     }));
   }, [allPosts]);
 
-  const typeBreakdown = useMemo(() => {
-    const counts = { project: 0, note: 0, other: 0 };
-    allPosts.forEach(p => {
-      const t = p.type || 'other';
-      counts[t] = (counts[t] || 0) + 1;
-    });
-    const total = allPosts.length || 1;
-    const colors = { project: '#10b981', note: '#f59e0b', other: '#3b82f6' };
-    return Object.entries(counts).map(([type, count]) => ({
-      type,
-      label: type.charAt(0).toUpperCase() + type.slice(1),
-      count,
-      percent: Math.round((count / total) * 100),
-      color: colors[type] || '#6b7280',
-    }));
-  }, [allPosts]);
-
   const activityChartData = useMemo(() => ({
     labels: monthlyActivity.map(m => m.label),
     datasets: [{

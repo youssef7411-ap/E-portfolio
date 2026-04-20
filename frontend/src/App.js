@@ -347,15 +347,15 @@ function App({ darkMode, setDarkMode }) {
   return (
     <Router>
       <motion.div 
-        className={darkMode ? 'dark-mode' : ''} 
+        className="dark-mode" 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
         <Routes>
-          <Route path="/" element={<Home darkMode={darkMode} setDarkMode={setDarkMode} />} />
+          <Route path="/" element={<Home />} />
           <Route path="/subject/:id" element={
             <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-              <SubjectPage darkMode={darkMode} setDarkMode={setDarkMode} />
+              <SubjectPage />
             </Suspense>
           } />
           <Route path="/admin/login" element={
