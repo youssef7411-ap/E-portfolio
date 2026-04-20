@@ -148,8 +148,11 @@ function Home() {
     fetchData();
   }, []);
 
+  // eslint-disable-next-line no-use-before-define
   const subjectsCount = useCountUp(sortedSubjects.length, 1000);
+  // eslint-disable-next-line no-use-before-define
   const projectsCount = useCountUp(totalProjects, 1100);
+  // eslint-disable-next-line no-use-before-define
   const mediaCount = useCountUp(totalAssets, 1300);
 
   const subjectLookup = useMemo(() => new Map(
