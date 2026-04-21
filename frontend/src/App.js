@@ -128,8 +128,7 @@ const fetchJsonWithTimeout = async (url, timeoutMs = 3000, extraHeaders = {}) =>
   }
 };
 
-function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
-  const location = useLocation();
+function AppBody({ darkMode, setDarkMode, setIsAdmin, location }) {
   const [, setIsAdmin] = useState(!!localStorage.getItem('adminToken'));
   const [bootPhase, setBootPhase] = useState('zoom-in');
   const [preloadProgress, setPreloadProgress] = useState({ loaded: 0, total: 0 });
@@ -343,10 +342,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
     );
   }
 
-  return (
-    <Router>
-      <motion.div 
-        className={darkMode ? 'dark-mode' : 'light-mode'} 
+
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
@@ -381,12 +377,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
 }
 
 function App({ darkMode, setDarkMode }) {
-  const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem('adminToken'));
-  return (
-    <Router>
-      <AppBody darkMode={darkMode} setDarkMode={setDarkMode} setIsAdmin={setIsAdmin} isAdmin={isAdmin} />
-    </Router>
-  );
+  return <AppBody darkMode={darkMode} setDarkMode={setDarkMode} />;
 }
 
 export default App;
