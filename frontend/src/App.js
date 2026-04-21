@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
@@ -129,7 +129,6 @@ const fetchJsonWithTimeout = async (url, timeoutMs = 3000, extraHeaders = {}) =>
 };
 
 function AppBody({ darkMode, setDarkMode, setIsAdmin, location }) {
-  const [, setIsAdmin] = useState(!!localStorage.getItem('adminToken'));
   const [bootPhase, setBootPhase] = useState('zoom-in');
   const [preloadProgress, setPreloadProgress] = useState({ loaded: 0, total: 0 });
   const preloadPercent = preloadProgress.total > 0
@@ -284,95 +283,96 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin, location }) {
     };
   }, []);
 
-  if (bootPhase !== 'done') {
-    return (
-      <div
-        className={[
-          'app-boot',
-          bootPhase === 'out' ? 'boot-out' : `boot-phase-${bootPhase}`,
-          darkMode ? 'dark-mode' : '',
-        ].filter(Boolean).join(' ')}
-        aria-label="Loading"
-      >
-        <div className="boot-shell">
-          <div className="boot-content">
-            <motion.div
-              className="boot-signature-loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.35 }}
-            >
-              <motion.h1 className="boot-signature-gold">Youssef's Portfolio</motion.h1>
-              <motion.p
-                className="boot-curated"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.55, duration: 0.2 }}
-              >
-                Loading workspace
-              </motion.p>
-            </motion.div>
+   if (bootPhase !== 'done') {
+     return (
+       <div
+         className={[
+           'app-boot',
+           bootPhase === 'out' ? 'boot-out' : `boot-phase-${bootPhase}`,
+           darkMode ? 'dark-mode' : '',
+         ].filter(Boolean).join(' ')}
+         aria-label="Loading"
+       >
+         <div className="boot-shell">
+           <div className="boot-content">
+             <motion.div
+               className="boot-signature-loading"
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               transition={{ duration: 0.5, delay: 0.35 }}
+             >
+               <motion.h1 className="boot-signature-gold">Youssef's Portfolio</motion.h1>
+               <motion.p
+                 className="boot-curated"
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: 1 }}
+                 transition={{ delay: 0.55, duration: 0.2 }}
+               >
+                 Loading workspace
+               </motion.p>
+             </motion.div>
 
-            <motion.div
-              className="boot-status-card"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.65, duration: 0.22 }}
-              role="status"
-              aria-live="polite"
-            >
-              <div className="boot-status-head">
-                <span className="boot-status-label">Loading</span>
-                <span className="boot-status-percent">{preloadPercent}%</span>
-              </div>
-              <div className="boot-preload-status">
-                {preloadProgress.total > 0
-                  ? `${preloadProgress.loaded}/${preloadProgress.total} assets ready`
-                  : 'Preparing assets'}
-              </div>
-              <div className="boot-status-bar" aria-hidden="true">
-                <span className="boot-status-fill" style={{ width: `${preloadPercent}%` }} />
-              </div>
-            </motion.div>
+             <motion.div
+               className="boot-status-card"
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: 0.65, duration: 0.22 }}
+               role="status"
+               aria-live="polite"
+             >
+               <div className="boot-status-head">
+                 <span className="boot-status-label">Loading</span>
+                 <span className="boot-status-percent">{preloadPercent}%</span>
+               </div>
+               <div className="boot-preload-status">
+                 {preloadProgress.total > 0
+                   ? `${preloadProgress.loaded}/${preloadProgress.total} assets ready`
+                   : 'Preparing assets'}
+               </div>
+               <div className="boot-status-bar" aria-hidden="true">
+                 <span className="boot-status-fill" style={{ width: `${preloadPercent}%` }} />
+               </div>
+             </motion.div>
 
-            <div className="boot-spinner" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+             <div className="boot-spinner" />
+           </div>
+         </div>
+       </div>
+     );
+   }
 
-
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/subject/:id" element={
-            <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-              <SubjectPage />
-            </Suspense>
-          } />
-          <Route path="/admin/login" element={
-            <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-              <AdminLogin setIsAdmin={setIsAdmin} />
-            </Suspense>
-          } />
-          <Route
-            path="/admin/*"
-            element={
-              <PrivateRoute>
-                <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-                  <AdminDashboard setIsAdmin={setIsAdmin} />
-                </Suspense>
-              </PrivateRoute>
-            }
-          />
-        </Routes>
-        {location.pathname !== '/admin/login' && (
-          <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
-        )}
-       </motion.div>
+   return (
+     <motion.div
+       initial={{ opacity: 0 }}
+       animate={{ opacity: 1 }}
+     >
+       <Routes>
+         <Route path="/" element={<Home />} />
+         <Route path="/subject/:id" element={
+           <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
+             <SubjectPage />
+           </Suspense>
+         } />
+         <Route path="/admin/login" element={
+           <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
+             <AdminLogin setIsAdmin={setIsAdmin} />
+           </Suspense>
+         } />
+         <Route
+           path="/admin/*"
+           element={
+             <PrivateRoute>
+               <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
+                 <AdminDashboard setIsAdmin={setIsAdmin} />
+               </Suspense>
+             </PrivateRoute>
+           }
+         />
+       </Routes>
+       {location.pathname !== '/admin/login' && (
+         <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
+       )}
+      </motion.div>
    );
 }
 
