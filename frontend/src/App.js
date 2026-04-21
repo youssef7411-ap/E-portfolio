@@ -290,52 +290,28 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
          className={[
            'app-boot',
            bootPhase === 'out' ? 'boot-out' : `boot-phase-${bootPhase}`,
-           darkMode ? 'dark-mode' : '',
          ].filter(Boolean).join(' ')}
          aria-label="Loading"
        >
          <div className="boot-shell">
-           <div className="boot-content">
-             <motion.div
-               className="boot-signature-loading"
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               transition={{ duration: 0.5, delay: 0.35 }}
-             >
-               <motion.h1 className="boot-signature-gold">Youssef's Portfolio</motion.h1>
-               <motion.p
-                 className="boot-curated"
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-                 transition={{ delay: 0.55, duration: 0.2 }}
-               >
-                 Loading workspace
-               </motion.p>
-             </motion.div>
-
-             <motion.div
-               className="boot-status-card"
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ delay: 0.65, duration: 0.22 }}
-               role="status"
-               aria-live="polite"
-             >
-               <div className="boot-status-head">
-                 <span className="boot-status-label">Loading</span>
-                 <span className="boot-status-percent">{preloadPercent}%</span>
-               </div>
-               <div className="boot-preload-status">
-                 {preloadProgress.total > 0
-                   ? `${preloadProgress.loaded}/${preloadProgress.total} assets ready`
-                   : 'Preparing assets'}
-               </div>
-               <div className="boot-status-bar" aria-hidden="true">
-                 <span className="boot-status-fill" style={{ width: `${preloadPercent}%` }} />
-               </div>
-             </motion.div>
-
-             <div className="boot-spinner" />
+           <div className="boot-terminal-icon" />
+           
+           <div className="boot-status-container">
+             <div className="boot-status-text">
+               <span>System initializing...</span>
+               <span>{preloadPercent}%</span>
+             </div>
+             <div className="boot-status-bar">
+               <div 
+                 className="boot-status-fill" 
+                 style={{ width: `${preloadPercent}%` }} 
+               />
+             </div>
+             <div className="boot-status-text" style={{ fontSize: '9px', opacity: 0.6 }}>
+               {preloadProgress.total > 0
+                 ? `Fetching assets: ${preloadProgress.loaded}/${preloadProgress.total}`
+                 : 'Establishing connection...'}
+             </div>
            </div>
          </div>
        </div>

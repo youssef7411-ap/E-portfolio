@@ -304,57 +304,25 @@ function Home() {
 
   return (
     <div className="home">
-      <header className="home-header glass">
-        <div className="container home-header-inner">
-          <motion.div variants={itemVariants}>
-            <motion.h1
-              className="home-title"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: -12 }}
-              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={prefersReducedMotion ? undefined : { duration: 0.45, delay: 0.08 }}
-            >
-              Youssef's Portfolio
-            </motion.h1>
-            <motion.p
-              className="home-subtitle"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              transition={prefersReducedMotion ? undefined : { duration: 0.35, delay: 0.12 }}
-            >
-              Grade 9 student · Academic Portfolio
-            </motion.p>
-          </motion.div>
-
-          <div className="header-right">
-            <button className="btn btn-ghost" onClick={() => navigate('/admin/login')}>
-              Admin
-            </button>
-            <div className="header-status-pill">
-              <span className="header-status-dot" />
-              {loading ? 'Syncing' : `${posts.length} posts`}
-            </div>
-          </div>
-        </div>
-      </header>
-
       <motion.section
         className="home-hero"
-        variants={itemVariants}
-        initial={prefersReducedMotion ? false : 'hidden'}
-        animate={prefersReducedMotion ? undefined : 'visible'}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
         <div className="container">
-          <div className="hero-content glass">
-            <span className="hero-kicker">Academic Excellence</span>
-            <h2 className="hero-headline">Explore Subject Collections</h2>
-            <p className="hero-copy">
-              Browse curated assignments, notes, and projects through a modern visualization-first interface.
-            </p>
-
-            <div className="explore-cta-shell">
-              <label htmlFor="subject-explore-select" className="subject-input-label">
-                Choose subject
-              </label>
+          <div className="hero-content">
+            <motion.h1 
+              className="hero-headline"
+              variants={itemVariants}
+            >
+              My Work
+            </motion.h1>
+            
+            <motion.div 
+              className="hero-actions"
+              variants={itemVariants}
+            >
               <div className="explore-cta-controls">
                 <select
                   id="subject-explore-select"
@@ -377,38 +345,44 @@ function Home() {
                 >
                   Explore Subject
                 </button>
+                <button 
+                  className="explore-cta-btn secondary" 
+                  onClick={() => navigate('/admin/login')}
+                >
+                  Admin
+                </button>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           <div className="dashboard-shell">
             <div className="dashboard-chart-grid">
-              <article className="dashboard-chart-card glass">
+              <motion.article className="dashboard-chart-card" variants={itemVariants}>
                 <div className="dashboard-chart-head">
                   <h3>Total Uploads Per Subject</h3>
                 </div>
                 <div className="dashboard-chart-body">
                   <Bar data={uploadsBySubjectData} options={barOptions} />
                 </div>
-              </article>
+              </motion.article>
 
-              <article className="dashboard-chart-card glass">
+              <motion.article className="dashboard-chart-card" variants={itemVariants}>
                 <div className="dashboard-chart-head">
                   <h3>Data Type Distribution</h3>
                 </div>
                 <div className="dashboard-chart-body">
                   <Doughnut data={distributionData} options={donutOptions} />
                 </div>
-              </article>
+              </motion.article>
 
-              <article className="dashboard-chart-card glass">
+              <motion.article className="dashboard-chart-card" variants={itemVariants}>
                 <div className="dashboard-chart-head">
                   <h3>Activity Frequency</h3>
                 </div>
                 <div className="dashboard-chart-body">
                   <Line data={activityData} options={lineOptions} />
                 </div>
-              </article>
+              </motion.article>
             </div>
           </div>
         </div>
