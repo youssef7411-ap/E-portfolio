@@ -212,19 +212,34 @@ function Home() {
   }, [sortedSubjects, subjectMeta, chartPalette]);
 
   const distributionData = useMemo(() => {
-    const totals = posts.reduce((acc, post) => {
-      acc.images += Array.isArray(post?.images) ? post.images.length : 0;
-      acc.videos += Array.isArray(post?.videos) ? post.videos.length : 0;
-      acc.files += Array.isArray(post?.files) ? post.files.length : 0;
-      acc.links += Array.isArray(post?.links) ? post.links.length : 0;
+    const typeCounts = posts.reduce((acc, post) => {
+      const type = String(post?.type || 'Other').trim();
+      acc[type] = (acc[type] || 0) + 1;
       return acc;
-    }, { images: 0, videos: 0, files: 0, links: 0 });
+    }, {});
+
+    const labels = Object.keys(typeCounts);
+    const data = Object.values(typeCounts);
+
+    // Generate a consistent color palette for content types
+    const colors = labels.map((_, index) => {
+      const colorIndex = index % 6; // Use 6 distinct colors, cycle if more types
+      switch (colorIndex) {
+        case 0: return chartPalette.cyan;
+        case 1: return chartPalette.green;
+        case 2: return chartPalette.amber;
+        case 3: return chartPalette.violet;
+        case 4: return chartPalette.primary;
+        case 5: return chartPalette.secondary;
+        default: return '#CCCCCC'; // Fallback
+      }
+    });
 
     return {
-      labels: ['Images', 'Videos', 'Files', 'Links'],
+      labels: labels,
       datasets: [{
-        data: [totals.images, totals.videos, totals.files, totals.links],
-        backgroundColor: [chartPalette.cyan, chartPalette.green, chartPalette.amber, chartPalette.violet],
+        data: data,
+        backgroundColor: colors,
         borderWidth: 0,
       }],
     };

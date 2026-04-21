@@ -8,15 +8,13 @@ const Footer = ({ isAdminRoute = false }) => {
       <div className="container footer-container">
         <div className="footer-left">
           <p className="footer-copy">
-            &copy; {new Date().getFullYear()} Youssef's Portfolio. {isAdminRoute ? 'Admin Workspace' : 'Academic Showcase'}
+            &copy; {new Date().getFullYear()} Youssef's Portfolio.
           </p>
         </div>
 
         <div className="footer-right">
           <nav className="footer-nav">
-            <Link to="/">Home</Link>
-            {!isAdminRoute && <Link to="/admin/login">Admin</Link>}
-            <a href="mailto:contact@youssef.me">Contact</a>
+            <Link to="/admin/login">Admin</Link>
           </nav>
         </div>
       </div>
