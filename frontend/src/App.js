@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
@@ -128,7 +128,8 @@ const fetchJsonWithTimeout = async (url, timeoutMs = 3000, extraHeaders = {}) =>
   }
 };
 
-function AppBody({ darkMode, setDarkMode, setIsAdmin, location }) {
+function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
+  const location = useLocation();
   const [bootPhase, setBootPhase] = useState('zoom-in');
   const [preloadProgress, setPreloadProgress] = useState({ loaded: 0, total: 0 });
   const preloadPercent = preloadProgress.total > 0
@@ -377,7 +378,11 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin, location }) {
 }
 
 function App({ darkMode, setDarkMode }) {
-  return <AppBody darkMode={darkMode} setDarkMode={setDarkMode} />;
+  return (
+    <BrowserRouter>
+      <AppBody darkMode={darkMode} setDarkMode={setDarkMode} />
+    </BrowserRouter>
+  );
 }
 
 export default App;

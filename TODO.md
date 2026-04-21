@@ -1,12 +1,13 @@
-# Build Fix TODO
+# Vercel Build Fix TODO
 
-## Completed:
+## Steps:
 
-- [x] Reproduced exact error: SyntaxError line 384 App.js
-
-## Status Update:
-
-- [x] react-scripts updated
-- [ ] App.js still has syntax error at line 383 (useState/useLocation scoping)
-
-## Next Fix: App.js Router restructure
+- [x] Fix App.js ESLint/JSX error: Added BrowserRouter import and wrapped AppBody
+- [ ] Test local build: cd frontend && npm run build (expect no warnings)
+- [ ] Fix npm vulnerabilities: cd frontend && npm audit fix
+- [ ] Optimize for Vercel
+  - Create vercel.json
+  - Skip API fetches during build
+  - Add build command overrides if needed
+- [ ] Get full Vercel build log
+- [ ] Deploy test
