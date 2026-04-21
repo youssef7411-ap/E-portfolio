@@ -11,7 +11,7 @@
     "dev": "concurrently \"npm --prefix frontend start\" \"npm --prefix backend run dev\"",
     "client": "npm --prefix frontend start",
     "server": "npm --prefix backend start",
-    "build": "npm --prefix frontend run build",
+    "build": "cd frontend && npm install && npm run build",
     "test": "npm --prefix frontend test",
     "install:all": "npm --prefix frontend install && npm --prefix backend install"
   },

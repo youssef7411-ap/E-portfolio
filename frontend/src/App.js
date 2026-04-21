@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
+import AdminCrashGuard from './components/AdminCrashGuard';
 import { motion } from 'framer-motion';
 import './styles/App.css';
 import { API_URL } from './config/api';
@@ -145,32 +146,39 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
     let doneTimer;
 
     const runBootSequence = async () => {
+      console.log("Starting Boot Sequence [Aesthetic V2]...");
       // Small delay to ensure styles are applied
       await wait(100);
 
       if (!isActive) return;
 
       setBootPhase('zoom-in');
+      console.log("Phase: zoom-in");
 
       try {
+        console.log("Starting asset preloads...");
         await Promise.allSettled([
           wait(2500), // Minimum visible time for the technical loading screen
           warmRouteChunks(),
           preloadPublicGraphics((progress) => {
             if (isActive) {
               setPreloadProgress(progress);
+              console.log(`Preload progress: ${progress.loaded}/${progress.total}`);
             }
           }),
         ]);
+        console.log("Preloads settled.");
       } catch (err) {
-        console.error("Boot sequence error:", err);
+        console.error("Boot sequence error caught:", err);
       }
 
       if (!isActive) return;
 
+      console.log("Phase: out");
       setBootPhase('out');
       doneTimer = window.setTimeout(() => {
         if (isActive) {
+          console.log("Phase: done. Rendering AppBody.");
           setBootPhase('done');
         }
       }, 500);
@@ -324,38 +332,40 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
    }
 
    return (
-     <motion.div
-       initial={{ opacity: 0 }}
-       animate={{ opacity: 1 }}
-     >
-       <Routes>
-         <Route path="/" element={<Home />} />
-         <Route path="/subject/:id" element={
-           <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-             <SubjectPage />
-           </Suspense>
-         } />
-         <Route path="/admin/login" element={
-           <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-             <AdminLogin setIsAdmin={setIsAdmin} />
-           </Suspense>
-         } />
-         <Route
-           path="/admin/*"
-           element={
-             <PrivateRoute>
-               <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
-                 <AdminDashboard setIsAdmin={setIsAdmin} />
-               </Suspense>
-             </PrivateRoute>
-           }
-         />
-       </Routes>
-       {location.pathname !== '/admin/login' && (
-         <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
-       )}
-      </motion.div>
-   );
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <AdminCrashGuard>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/subject/:id" element={
+            <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
+              <SubjectPage />
+            </Suspense>
+          } />
+          <Route path="/admin/login" element={
+            <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
+              <AdminLogin setIsAdmin={setIsAdmin} />
+            </Suspense>
+          } />
+          <Route
+            path="/admin/*"
+            element={
+              <PrivateRoute>
+                <Suspense fallback={<div className="spinner" style={{margin: '100px auto'}} />}>
+                  <AdminDashboard setIsAdmin={setIsAdmin} />
+                </Suspense>
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+      </AdminCrashGuard>
+      {location.pathname !== '/admin/login' && (
+        <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
+      )}
+     </motion.div>
+  );
 }
 
 function App({ darkMode, setDarkMode }) {

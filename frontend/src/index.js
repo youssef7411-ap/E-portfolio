@@ -21,6 +21,16 @@ function Root() {
   });
 
   useEffect(() => {
+    const handleError = (event) => {
+      console.error("Global error:", event.error);
+      setError(event.error || new Error(event.message || 'Unknown runtime error'));
+    };
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error("Unhandled rejection:", e.reason);
+      setError(e.reason || new Error('Unhandled Promise Rejection'));
+    });
+
     const init = async () => {
       try {
         console.log("React Initializing...");
@@ -37,6 +47,10 @@ function Root() {
       }
     };
     init();
+
+    return () => {
+      window.removeEventListener('error', handleError);
+    };
   }, []);
 
   useEffect(() => {
