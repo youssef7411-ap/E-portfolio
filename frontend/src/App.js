@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
@@ -128,7 +128,8 @@ const fetchJsonWithTimeout = async (url, timeoutMs = 3000, extraHeaders = {}) =>
   }
 };
 
-function App({ darkMode, setDarkMode }) {
+function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
+  const location = useLocation();
   const [, setIsAdmin] = useState(!!localStorage.getItem('adminToken'));
   const [bootPhase, setBootPhase] = useState('zoom-in');
   const [preloadProgress, setPreloadProgress] = useState({ loaded: 0, total: 0 });
@@ -294,10 +295,6 @@ function App({ darkMode, setDarkMode }) {
         ].filter(Boolean).join(' ')}
         aria-label="Loading"
       >
-        <div className="boot-shape boot-shape-a" aria-hidden="true" />
-        <div className="boot-shape boot-shape-b" aria-hidden="true" />
-        <div className="boot-shape boot-shape-c" aria-hidden="true" />
-
         <div className="boot-shell">
           <div className="boot-content">
             <motion.div
@@ -306,29 +303,14 @@ function App({ darkMode, setDarkMode }) {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.35 }}
             >
-              <motion.h1
-                className="boot-signature-gold"
-                initial={{ scale: 0.8, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.8, type: 'spring', stiffness: 160, damping: 18 }}
-              >
-                YOUSSEF
-              </motion.h1>
-              <motion.div
-                className="portfolio-shimmer"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.95, duration: 0.3 }}
-              >
-                PORTFOLIO
-              </motion.div>
+              <motion.h1 className="boot-signature-gold">Youssef's Portfolio</motion.h1>
               <motion.p
                 className="boot-curated"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.1, duration: 0.25 }}
+                transition={{ delay: 0.55, duration: 0.2 }}
               >
-                Preparing your personalized experience
+                Loading workspace
               </motion.p>
             </motion.div>
 
@@ -336,36 +318,27 @@ function App({ darkMode, setDarkMode }) {
               className="boot-status-card"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2, duration: 0.28 }}
+              transition={{ delay: 0.65, duration: 0.22 }}
               role="status"
               aria-live="polite"
             >
               <div className="boot-status-head">
-                <span className="boot-status-label">Resource Loading</span>
+                <span className="boot-status-label">Loading</span>
                 <span className="boot-status-percent">{preloadPercent}%</span>
               </div>
               <div className="boot-preload-status">
                 {preloadProgress.total > 0
-                  ? `Loaded ${preloadProgress.loaded} of ${preloadProgress.total} graphics`
-                  : 'Initializing assets...'}
+                  ? `${preloadProgress.loaded}/${preloadProgress.total} assets ready`
+                  : 'Preparing assets'}
               </div>
               <div className="boot-status-bar" aria-hidden="true">
                 <span className="boot-status-fill" style={{ width: `${preloadPercent}%` }} />
               </div>
             </motion.div>
 
-            <motion.div
-              className="boot-preload-meta"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.35, duration: 0.2 }}
-            >
-              Optimizing routes, media, and dashboard modules
-            </motion.div>
             <div className="boot-spinner" />
           </div>
         </div>
-        <div className="boot-progress" aria-hidden="true" />
       </div>
     );
   }
@@ -400,8 +373,19 @@ function App({ darkMode, setDarkMode }) {
             }
           />
         </Routes>
-        {window.location.pathname !== '/admin/login' && <Footer darkMode={darkMode} />}
+        {location.pathname !== '/admin/login' && (
+          <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
+        )}
       </motion.div>
+    
+  );
+}
+
+function App({ darkMode, setDarkMode }) {
+  const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem('adminToken'));
+  return (
+    <Router>
+      <AppBody darkMode={darkMode} setDarkMode={setDarkMode} setIsAdmin={setIsAdmin} isAdmin={isAdmin} />
     </Router>
   );
 }

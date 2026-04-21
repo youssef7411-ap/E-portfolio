@@ -1,68 +1,49 @@
-
 /* ─── Global Footer ───────────────────────────────────────────── */
 .global-footer {
-  padding: 40px 0 30px;
-  background:
-    linear-gradient(180deg, rgba(13, 22, 48, 0.72) 0%, rgba(16, 27, 53, 0.92) 100%);
-  backdrop-filter: var(--blur);
-  border-top: 1px solid var(--border);
-  position: relative;
   margin-top: auto;
-  overflow: hidden;
+  padding: 16px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.global-footer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(120deg, rgba(255, 230, 154, 0.08), transparent 24%, transparent 76%, rgba(132, 214, 255, 0.06)),
-    radial-gradient(circle at 50% 0%, rgba(243, 207, 93, 0.08), transparent 35%);
-  pointer-events: none;
+.global-footer-admin {
+  background: rgba(2, 6, 23, 0.82);
 }
 
 .footer-content {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 20px;
-  text-align: center;
-  max-width: 600px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.footer-signature {
-  margin-bottom: 0;
-}
-
-.cursive-svg {
-  width: clamp(240px, 35vw, 360px);
-  height: auto;
-  color: var(--accent);
-  filter: drop-shadow(0 4px 18px rgba(243, 207, 93, 0.32));
+.footer-brand {
+  margin: 0;
+  font-family: var(--font-main);
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: 0.01em;
 }
 
 .footer-copy {
   margin: 0;
   font-family: var(--font-main);
-  font-size: 0.85rem;
-  color: var(--text-2);
-  font-weight: 400;
-  letter-spacing: 0.05em;
-  padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: var(--radius-xl);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 600;
 }
 
-/* Responsive */
 @media (max-width: 640px) {
-  .global-footer { padding: 32px 0 24px; }
-  .footer-content { gap: 16px; }
-  .cursive-svg { width: clamp(200px, 50vw, 280px); }
-  .footer-copy { font-size: 0.8rem; padding: 10px 20px; }
-}
+  .global-footer {
+    padding: 14px 0;
+  }
 
+  .footer-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,44 +1,36 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import SubjectCard from '../components/SubjectCard';
 import '../styles/Home.css';
 import { API_URL } from '../config/api';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const useCountUp = (end, duration = 1500, shouldAnimate = true) => {
-  const [count, setCount] = useState(shouldAnimate ? 0 : end);
-  
-  useEffect(() => {
-    if (!shouldAnimate || end === 0) {
-      setCount(end);
-      return;
-    }
-    
-    let startTime = null;
-    let animationFrame;
-    
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(easeOut * end));
-      
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      }
-    };
-    
-    animationFrame = requestAnimationFrame(animate);
-    
-    return () => {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-    };
-  }, [end, duration, shouldAnimate]);
-  
-  return count;
-};
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 const containerVariants = {
   hidden: {},
@@ -79,23 +71,13 @@ const getPostTimestamp = (post) => {
   return latest;
 };
 
-const getAssetCount = (post) => {
-  const images = Array.isArray(post?.images) ? post.images.length : 0;
-  const videos = Array.isArray(post?.videos) ? post.videos.length : 0;
-  const files = Array.isArray(post?.files) ? post.files.length : 0;
-  return images + videos + files;
-};
-
 function Home() {
   const prefersReducedMotion = useReducedMotion();
   const [subjects, setSubjects] = useState([]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [subjectQuery, setSubjectQuery] = useState('');
-  const [isValid, setIsValid] = useState(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const navigate = useNavigate();
-  const subjectsSectionRef = useRef(null);
-  const inputRef = useRef(null);
 
   const fetchData = async () => {
     let attempts = 0;
@@ -136,20 +118,6 @@ function Home() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (subjectQuery.trim().length === 0) {
-      setIsValid(null);
-    } else {
-      setIsValid(subjectQuery.trim().length >= 2);
-    }
-  }, [subjectQuery]);
-
   const subjectMeta = useMemo(() => {
     const map = new Map();
 
@@ -160,13 +128,11 @@ function Home() {
       const current = map.get(subjectId) || {
         postCount: 0,
         projectCount: 0,
-        attachmentCount: 0,
         lastUpdated: 0,
       };
 
       current.postCount += 1;
       if (post?.type === 'project') current.projectCount += 1;
-      if (getAssetCount(post) > 0) current.attachmentCount += 1;
       current.lastUpdated = Math.max(current.lastUpdated, getPostTimestamp(post));
       map.set(subjectId, current);
     }
@@ -183,45 +149,194 @@ function Home() {
     })
   ), [subjects]);
 
-  const filteredSubjects = useMemo(() => {
-    if (!subjectQuery.trim()) return sortedSubjects;
-    return sortedSubjects.filter(s => 
-      s.name.toLowerCase().includes(subjectQuery.toLowerCase())
-    );
-  }, [sortedSubjects, subjectQuery]);
-
-  const totalProjects = useMemo(() => posts.filter((post) => post?.type === 'project').length, [posts]);
-  const totalAssets = useMemo(() => posts.reduce((sum, post) => sum + getAssetCount(post), 0), [posts]);
-
-  const subjectsCount = useCountUp(sortedSubjects.length, 1000);
-  const projectsCount = useCountUp(totalProjects, 1100);
-  const mediaCount = useCountUp(totalAssets, 1300);
-
-  const overviewStats = [
-    {
-      label: 'Subjects',
-      value: loading ? '--' : sortedSubjects.length,
-      detail: 'Visible sections',
-      tone: 'lime',
-    },
-    {
-      label: 'Projects',
-      value: loading ? '--' : totalProjects,
-      detail: 'Hands-on work',
-      tone: 'orange',
-    },
-    {
-      label: 'Media',
-      value: loading ? '--' : totalAssets,
-      detail: 'Files, images, videos',
-      tone: 'sky',
-    },
-  ];
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && filteredSubjects.length > 0 && isValid) {
-      navigate(`/subject/${filteredSubjects[0]._id}`);
+  useEffect(() => {
+    if (!sortedSubjects.length) {
+      setSelectedSubjectId('');
+      return;
     }
+    setSelectedSubjectId((prev) => {
+      if (prev && sortedSubjects.some((subject) => String(subject._id) === String(prev))) {
+        return prev;
+      }
+      return String(sortedSubjects[0]._id);
+    });
+  }, [sortedSubjects]);
+
+  const chartPalette = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return {
+        text: '#f8fafc',
+        textSoft: '#94a3b8',
+        border: 'rgba(148,163,184,0.22)',
+        cyan: '#38bdf8',
+        green: '#22c55e',
+        amber: '#f59e0b',
+        violet: '#a78bfa',
+      };
+    }
+
+    const styles = getComputedStyle(document.documentElement);
+    const get = (name, fallback) => String(styles.getPropertyValue(name) || '').trim() || fallback;
+    return {
+      text: get('--text-main', '#f8fafc'),
+      textSoft: get('--text-muted', '#94a3b8'),
+      border: get('--border', 'rgba(148,163,184,0.22)'),
+      cyan: '#38bdf8',
+      green: '#22c55e',
+      amber: '#f59e0b',
+      violet: '#a78bfa',
+    };
+  }, []);
+
+  const baseChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: chartPalette.textSoft,
+          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+        },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(2, 6, 23, 0.92)',
+        borderColor: chartPalette.border,
+        borderWidth: 1,
+        titleColor: chartPalette.text,
+        bodyColor: chartPalette.textSoft,
+        titleFont: { family: 'Inter, system-ui, sans-serif', weight: 700 },
+        bodyFont: { family: 'Inter, system-ui, sans-serif', weight: 500 },
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: chartPalette.textSoft,
+          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+        },
+        grid: { color: 'rgba(148,163,184,0.15)' },
+      },
+      y: {
+        ticks: {
+          color: chartPalette.textSoft,
+          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+          precision: 0,
+        },
+        grid: { color: 'rgba(148,163,184,0.15)' },
+        beginAtZero: true,
+      },
+    },
+  }), [chartPalette]);
+
+  const uploadsBySubjectData = useMemo(() => {
+    const sorted = [...sortedSubjects]
+      .map((subject) => {
+        const meta = subjectMeta.get(String(subject._id)) || { postCount: 0 };
+        return { name: subject.name, uploads: Number(meta.postCount || 0) };
+      })
+      .sort((a, b) => b.uploads - a.uploads)
+      .slice(0, 8);
+
+    return {
+      labels: sorted.map((item) => item.name),
+      datasets: [{
+        label: 'Uploads',
+        data: sorted.map((item) => item.uploads),
+        borderRadius: 10,
+        backgroundColor: chartPalette.cyan,
+      }],
+    };
+  }, [sortedSubjects, subjectMeta, chartPalette]);
+
+  const distributionData = useMemo(() => {
+    const totals = posts.reduce((acc, post) => {
+      acc.images += Array.isArray(post?.images) ? post.images.length : 0;
+      acc.videos += Array.isArray(post?.videos) ? post.videos.length : 0;
+      acc.files += Array.isArray(post?.files) ? post.files.length : 0;
+      acc.links += Array.isArray(post?.links) ? post.links.length : 0;
+      return acc;
+    }, { images: 0, videos: 0, files: 0, links: 0 });
+
+    return {
+      labels: ['Images', 'Videos', 'Files', 'Links'],
+      datasets: [{
+        data: [totals.images, totals.videos, totals.files, totals.links],
+        backgroundColor: [chartPalette.cyan, chartPalette.green, chartPalette.amber, chartPalette.violet],
+        borderWidth: 0,
+      }],
+    };
+  }, [posts, chartPalette]);
+
+  const activityData = useMemo(() => {
+    const days = [];
+    for (let i = 13; i >= 0; i -= 1) {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - i);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      const count = posts.filter((post) => {
+        const timestamp = getPostTimestamp(post);
+        return timestamp >= start.getTime() && timestamp < end.getTime();
+      }).length;
+      days.push({
+        label: `${start.getMonth() + 1}/${start.getDate()}`,
+        count,
+      });
+    }
+
+    return {
+      labels: days.map((day) => day.label),
+      datasets: [{
+        label: 'Activity',
+        data: days.map((day) => day.count),
+        borderColor: chartPalette.green,
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        pointBackgroundColor: chartPalette.green,
+        fill: true,
+        borderWidth: 2,
+        tension: 0.36,
+      }],
+    };
+  }, [posts, chartPalette]);
+
+  const barOptions = useMemo(() => ({
+    ...baseChartOptions,
+    plugins: {
+      ...baseChartOptions.plugins,
+      legend: { display: false },
+    },
+  }), [baseChartOptions]);
+
+  const donutOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: chartPalette.textSoft,
+          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+          padding: 14,
+        },
+      },
+      tooltip: baseChartOptions.plugins.tooltip,
+    },
+  }), [chartPalette, baseChartOptions]);
+
+  const lineOptions = useMemo(() => ({
+    ...baseChartOptions,
+    plugins: {
+      ...baseChartOptions.plugins,
+      legend: { display: false },
+    },
+    interaction: { intersect: false, mode: 'index' },
+  }), [baseChartOptions]);
+
+  const handleExploreSubject = () => {
+    if (!selectedSubjectId) return;
+    navigate(`/subject/${selectedSubjectId}`);
   };
 
   return (
@@ -235,7 +350,7 @@ function Home() {
               animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
               transition={prefersReducedMotion ? undefined : { duration: 0.45, delay: 0.08 }}
             >
-              Hi, I'm Youssef
+              Youssef's Portfolio
             </motion.h1>
             <motion.p
               className="home-subtitle"
@@ -268,53 +383,69 @@ function Home() {
         <div className="container">
           <div className="hero-content">
             <span className="hero-kicker">Academic Excellence</span>
-            <h2 className="hero-headline">Explore my educational journey</h2>
+            <h2 className="hero-headline">Explore Subject Collections</h2>
             <p className="hero-copy">
-              A curated collection of my projects, assignments, and academic achievements. Search for a subject below to get started.
+              Browse curated assignments, notes, and projects through a modern visualization-first interface.
             </p>
 
-            <div className="subject-search-container">
-              <label htmlFor="subject-input" className="subject-input-label">
-                Find a subject
+            <div className="explore-cta-shell">
+              <label htmlFor="subject-explore-select" className="subject-input-label">
+                Choose subject
               </label>
-              <div className="subject-input-wrapper">
-                <input
-                  ref={inputRef}
-                  id="subject-input"
-                  type="text"
-                  className={`subject-input ${isValid === true ? 'is-valid' : isValid === false ? 'is-invalid' : ''}`}
-                  placeholder="Enter subject name"
-                  value={subjectQuery}
-                  onChange={(e) => setSubjectQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  aria-invalid={isValid === false}
-                />
-                <div className="input-feedback">
-                  {isValid === true && (
-                    <span className="feedback-icon valid">✓</span>
-                  )}
-                  {isValid === false && (
-                    <span className="feedback-icon invalid">!</span>
-                  )}
-                </div>
+              <div className="explore-cta-controls">
+                <select
+                  id="subject-explore-select"
+                  className="explore-subject-select"
+                  value={selectedSubjectId}
+                  onChange={(e) => setSelectedSubjectId(e.target.value)}
+                  aria-label="Select subject to explore"
+                >
+                  {sortedSubjects.map((subject) => (
+                    <option key={subject._id} value={subject._id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="explore-cta-btn"
+                  onClick={handleExploreSubject}
+                  disabled={!selectedSubjectId}
+                >
+                  Explore Subject
+                </button>
               </div>
             </div>
           </div>
 
           <div className="dashboard-shell">
-            <div className="dashboard-stat-grid">
-              {overviewStats.map((stat) => (
-                <article
-                  key={stat.label}
-                  className={`dashboard-stat-card dashboard-stat-card--${stat.tone}`}
-                >
-                  <span className="dashboard-stat-label">{stat.label}</span>
-                  <strong className="dashboard-stat-value">
-                    {loading ? '--' : (stat.label === 'Subjects' ? subjectsCount : stat.label === 'Projects' ? projectsCount : stat.label === 'Media' ? mediaCount : stat.value)}
-                  </strong>
-                  <span className="dashboard-stat-detail">{stat.detail}</span>
-                </article>
-              ))}
+            <div className="dashboard-chart-grid">
+              <article className="dashboard-chart-card">
+                <div className="dashboard-chart-head">
+                  <h3>Total Uploads Per Subject</h3>
+                </div>
+                <div className="dashboard-chart-body">
+                  <Bar data={uploadsBySubjectData} options={barOptions} />
+                </div>
+              </article>
+
+              <article className="dashboard-chart-card">
+                <div className="dashboard-chart-head">
+                  <h3>Data Type Distribution</h3>
+                </div>
+                <div className="dashboard-chart-body">
+                  <Doughnut data={distributionData} options={donutOptions} />
+                </div>
+              </article>
+
+              <article className="dashboard-chart-card">
+                <div className="dashboard-chart-head">
+                  <h3>Activity Frequency</h3>
+                </div>
+                <div className="dashboard-chart-body">
+                  <Line data={activityData} options={lineOptions} />
+                </div>
+              </article>
             </div>
           </div>
         </div>
@@ -323,7 +454,6 @@ function Home() {
       <main className="home-main">
         <div className="container">
           <motion.section
-            ref={subjectsSectionRef}
             className="home-panel"
             variants={containerVariants}
             initial={prefersReducedMotion ? false : 'hidden'}
@@ -331,7 +461,7 @@ function Home() {
           >
             <div className="home-section-head">
               <h3>All Subjects</h3>
-              <span>{filteredSubjects.length} shown</span>
+              <span>{sortedSubjects.length} shown</span>
             </div>
 
             {loading ? (
@@ -342,11 +472,6 @@ function Home() {
                   ))}
                 </div>
               </div>
-            ) : filteredSubjects.length === 0 ? (
-              <div className="empty-state">
-                <p>No subjects match "{subjectQuery}"</p>
-                <button className="btn btn-secondary" onClick={() => setSubjectQuery('')}>Clear search</button>
-              </div>
             ) : (
               <motion.div
                 className="subjects-grid"
@@ -354,7 +479,7 @@ function Home() {
                 initial={prefersReducedMotion ? false : 'hidden'}
                 animate={prefersReducedMotion ? undefined : 'visible'}
               >
-                {filteredSubjects.map((subject) => (
+                {sortedSubjects.map((subject) => (
                   <SubjectCard
                     key={subject._id}
                     subject={subject}
