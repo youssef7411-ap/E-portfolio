@@ -99,12 +99,16 @@ const preloadPublicGraphics = async (onProgress) => {
 
 const getVisitorId = () => {
   const key = 'visitorId';
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    localStorage.setItem(key, id);
+  try {
+    let id = localStorage.getItem(key);
+    if (!id) {
+      id = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem(key, id);
+    }
+    return id;
+  } catch (e) {
+    return `fallback-${Date.now()}`;
   }
-  return id;
 };
 
 const fetchJsonWithTimeout = async (url, timeoutMs = 3000, extraHeaders = {}) => {

@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Force background early in CSS load */
+html, body {
+  background-color: #000000 !important;
+}
+
 :root {
   --primary-color: #FFFFFF;
   --secondary-color: #F5F5F5;
