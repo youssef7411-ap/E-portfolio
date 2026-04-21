@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   Chart as ChartJS,
@@ -15,10 +16,8 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import SubjectCard from '../components/SubjectCard';
+import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
-import { API_URL } from '../config/api';
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 ChartJS.register(
   CategoryScale,
@@ -73,65 +72,29 @@ const getPostTimestamp = (post) => {
 
 function Home() {
   const prefersReducedMotion = useReducedMotion();
-  const [subjects, setSubjects] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { subjects, posts, loading } = useSelector((state) => state.portfolio);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const navigate = useNavigate();
 
-  const fetchData = async () => {
-    let attempts = 0;
-    while (attempts < 4) {
-      attempts += 1;
-      try {
-        const [subjectsRes, postsRes] = await Promise.all([
-          fetch(`${API_URL}/api/subjects`),
-          fetch(`${API_URL}/api/posts`),
-        ]);
-
-        if (!subjectsRes.ok || !postsRes.ok) {
-          throw new Error(`Fetch failed (${subjectsRes.status}/${postsRes.status})`);
-        }
-
-        const [subjectsData, postsData] = await Promise.all([
-          subjectsRes.json().catch(() => []),
-          postsRes.json().catch(() => []),
-        ]);
-
-        setSubjects(Array.isArray(subjectsData) ? subjectsData.filter((subject) => subject.visible !== false) : []);
-        setPosts(Array.isArray(postsData) ? postsData : []);
-        setLoading(false);
-        return;
-      } catch {
-        if (attempts >= 4) {
-          setSubjects([]);
-          setPosts([]);
-          setLoading(false);
-          return;
-        }
-        await wait(800);
-      }
-    }
-  };
-
   useEffect(() => {
-    fetchData();
-  }, []);
+    dispatch(fetchPortfolioData());
+  }, [dispatch]);
 
-   const subjectMeta = useMemo(() => {
-     const map = new Map();
+  const subjectMeta = useMemo(() => {
+    const map = new Map();
 
-     for (const post of posts) {
-       const subjectId = String(getSubjectId(post) || '');
-       if (!subjectId) continue;
+    for (const post of posts) {
+      const subjectId = String(getSubjectId(post) || '');
+      if (!subjectId) continue;
 
-       const current = map.get(subjectId) || { postCount: 0 };
-       current.postCount += 1;
-       map.set(subjectId, current);
-     }
+      const current = map.get(subjectId) || { postCount: 0 };
+      current.postCount += 1;
+      map.set(subjectId, current);
+    }
 
-     return map;
-   }, [posts]);
+    return map;
+  }, [posts]);
 
   const sortedSubjects = useMemo(() => (
     [...subjects].sort((a, b) => {
@@ -161,6 +124,9 @@ function Home() {
         text: '#f8fafc',
         textSoft: '#94a3b8',
         border: 'rgba(148,163,184,0.22)',
+        primary: '#3b82f6',
+        secondary: '#64748b',
+        accent: '#f59e0b',
         cyan: '#38bdf8',
         green: '#22c55e',
         amber: '#f59e0b',
@@ -174,6 +140,9 @@ function Home() {
       text: get('--text-main', '#f8fafc'),
       textSoft: get('--text-muted', '#94a3b8'),
       border: get('--border', 'rgba(148,163,184,0.22)'),
+      primary: get('--primary-color', '#3b82f6'),
+      secondary: get('--secondary-color', '#64748b'),
+      accent: get('--accent-color', '#f59e0b'),
       cyan: '#38bdf8',
       green: '#22c55e',
       amber: '#f59e0b',
@@ -188,7 +157,7 @@ function Home() {
       legend: {
         labels: {
           color: chartPalette.textSoft,
-          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
         },
       },
       tooltip: {
@@ -197,22 +166,22 @@ function Home() {
         borderWidth: 1,
         titleColor: chartPalette.text,
         bodyColor: chartPalette.textSoft,
-        titleFont: { family: 'Inter, system-ui, sans-serif', weight: 700 },
-        bodyFont: { family: 'Inter, system-ui, sans-serif', weight: 500 },
+        titleFont: { family: 'var(--font-family-base)', weight: 700 },
+        bodyFont: { family: 'var(--font-family-base)', weight: 500 },
       },
     },
     scales: {
       x: {
         ticks: {
           color: chartPalette.textSoft,
-          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
         },
         grid: { color: 'rgba(148,163,184,0.15)' },
       },
       y: {
         ticks: {
           color: chartPalette.textSoft,
-          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
           precision: 0,
         },
         grid: { color: 'rgba(148,163,184,0.15)' },
@@ -236,7 +205,8 @@ function Home() {
         label: 'Uploads',
         data: sorted.map((item) => item.uploads),
         borderRadius: 10,
-        backgroundColor: chartPalette.cyan,
+        backgroundColor: chartPalette.primary,
+        maxBarThickness: 60,
       }],
     };
   }, [sortedSubjects, subjectMeta, chartPalette]);
@@ -283,12 +253,12 @@ function Home() {
       datasets: [{
         label: 'Activity',
         data: days.map((day) => day.count),
-        borderColor: chartPalette.green,
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        pointBackgroundColor: chartPalette.green,
+        borderColor: chartPalette.primary,
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        pointBackgroundColor: chartPalette.primary,
         fill: true,
         borderWidth: 2,
-        tension: 0.36,
+        tension: 0.4,
       }],
     };
   }, [posts, chartPalette]);
@@ -304,13 +274,13 @@ function Home() {
   const donutOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '68%',
+    cutout: '60%',
     plugins: {
       legend: {
         position: 'bottom',
         labels: {
           color: chartPalette.textSoft,
-          font: { family: 'Inter, system-ui, sans-serif', size: 11, weight: 600 },
+          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
           padding: 14,
         },
       },
@@ -374,7 +344,7 @@ function Home() {
         animate={prefersReducedMotion ? undefined : 'visible'}
       >
         <div className="container">
-          <div className="hero-content">
+          <div className="hero-content glass">
             <span className="hero-kicker">Academic Excellence</span>
             <h2 className="hero-headline">Explore Subject Collections</h2>
             <p className="hero-copy">
@@ -413,7 +383,7 @@ function Home() {
 
           <div className="dashboard-shell">
             <div className="dashboard-chart-grid">
-              <article className="dashboard-chart-card">
+              <article className="dashboard-chart-card glass">
                 <div className="dashboard-chart-head">
                   <h3>Total Uploads Per Subject</h3>
                 </div>
@@ -422,7 +392,7 @@ function Home() {
                 </div>
               </article>
 
-              <article className="dashboard-chart-card">
+              <article className="dashboard-chart-card glass">
                 <div className="dashboard-chart-head">
                   <h3>Data Type Distribution</h3>
                 </div>
@@ -431,7 +401,7 @@ function Home() {
                 </div>
               </article>
 
-              <article className="dashboard-chart-card">
+              <article className="dashboard-chart-card glass">
                 <div className="dashboard-chart-head">
                   <h3>Activity Frequency</h3>
                 </div>
@@ -447,7 +417,7 @@ function Home() {
       <main className="home-main">
         <div className="container">
           <motion.section
-            className="home-panel"
+            className="home-panel glass"
             variants={containerVariants}
             initial={prefersReducedMotion ? false : 'hidden'}
             animate={prefersReducedMotion ? undefined : 'visible'}

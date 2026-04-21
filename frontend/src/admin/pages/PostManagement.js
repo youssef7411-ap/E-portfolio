@@ -819,7 +819,7 @@ export default function PostManagement() {
           <tbody>
             {filteredPosts.map(post => (
               <tr key={post._id}>
-                <td style={{ fontWeight: 600, color: '#ffffff' }}>{post.title}</td>
+                <td style={{ fontWeight: 600, color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{post.title}</td>
                 <td>{post.subject_id?.name || 'N/A'}</td>
                 <td>
                   <span className="badge badge-gray" style={{ textTransform: 'capitalize' }}>

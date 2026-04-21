@@ -1,6 +1,55 @@
+:root {
+  /* 8-point grid system tokens */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+
+  /* Typography */
+  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Colors */
+  --primary-color: #3b82f6;
+  --secondary-color: #64748b;
+  --accent-color: #38bdf8;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: rgba(148, 163, 184, 0.2);
+  --glass-bg: rgba(15, 23, 42, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Transitions */
+  --transition-normal: 300ms ease-in-out;
+  --transition-fast: 150ms ease-in-out;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
 .App {
   width: 100%;
   min-height: 100vh;
+  font-family: var(--font-family-base);
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(2, 6, 23, 0.37);
+}
+
+.glass-hover:hover {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(56, 189, 248, 0.15);
+  transition: all var(--transition-normal);
 }
 
 /* ── Boot / loading screen ─────────────────────────────── */
@@ -8,185 +57,76 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  padding:
-    max(16px, env(safe-area-inset-top))
-    max(16px, env(safe-area-inset-right))
-    max(16px, env(safe-area-inset-bottom))
-    max(16px, env(safe-area-inset-left));
+  padding: var(--space-2);
   overflow: hidden;
-  background:
-    radial-gradient(circle at 12% 16%, rgba(56, 189, 248, 0.18), transparent 36%),
-    radial-gradient(circle at 84% 18%, rgba(34, 197, 94, 0.12), transparent 40%),
-    linear-gradient(155deg, #020617 0%, #05070f 52%, #030712 100%);
-  animation: bootFadeIn 0.28s ease-out both;
-}
-
-.app-boot.boot-out {
-  animation: bootFadeOut 0.4s ease-in forwards;
+  background: #0a0c10; /* Deep gray / almost black */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bootFadeIn 0.3s ease-out both;
 }
 
 .boot-shell {
-  width: min(720px, 92vw);
-  margin: 0 auto;
-  border-radius: 24px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: rgba(15, 23, 42, 0.7);
-  box-shadow: 0 30px 50px -35px rgba(2, 6, 23, 0.95), 0 0 24px -14px rgba(56, 189, 248, 0.46);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  position: relative;
-  z-index: 3;
-}
-
-.boot-shape {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(2px);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.boot-shape-a {
-  width: 320px;
-  height: 320px;
-  left: -120px;
-  top: -80px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.28), transparent 68%);
-}
-
-.boot-shape-b {
-  width: 280px;
-  height: 280px;
-  right: -80px;
-  top: 22%;
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.2), transparent 70%);
-}
-
-.boot-shape-c {
-  width: 260px;
-  height: 260px;
-  left: 45%;
-  bottom: -120px;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.16), transparent 72%);
+  width: min(600px, 90vw);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.1);
+  overflow: hidden;
 }
 
 .boot-content {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
-  transform: translate3d(0, 0, 0);
-  padding: clamp(1.2rem, 3vw, 2rem);
-  text-align: left;
-}
-
-.boot-signature-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
+  gap: var(--space-3);
+  padding: var(--space-4);
 }
 
 .boot-signature-gold {
-  font-family: var(--font-main);
-  font-size: clamp(2.3rem, 7vw, 4.4rem);
+  font-family: var(--font-family-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
-  color: #f8fafc;
-  letter-spacing: -0.03em;
-  line-height: 0.95;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  line-height: 1;
   margin: 0;
-}
-
-.portfolio-shimmer {
-  font-family: var(--font-main);
-  font-size: clamp(0.83rem, 2vw, 1rem);
-  font-weight: 600;
-  color: #67e8f9;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  opacity: 0.9;
+  text-align: center;
 }
 
 .boot-curated {
-  font-family: var(--font-main);
-  font-size: clamp(0.77rem, 1.35vw, 0.88rem);
+  font-size: 0.9rem;
   font-weight: 500;
-  letter-spacing: 0.01em;
-  text-transform: none;
-  color: #cbd5e1;
-  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: -4px;
 }
 
 .boot-status-card {
-  background: rgba(2, 6, 23, 0.52);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 14px;
-  padding: 0.72rem 0.8rem;
-}
-
-.boot-status-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.3rem;
-}
-
-.boot-status-label {
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  font-weight: 700;
-}
-
-.boot-status-percent {
-  font-size: 0.85rem;
-  color: #e2e8f0;
-  font-weight: 700;
-}
-
-.boot-preload-status {
-  font-family: var(--font-main);
-  font-size: clamp(0.71rem, 1.2vw, 0.8rem);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: #cbd5e1;
-  margin: 0;
-}
-
-.boot-status-bar {
-  margin-top: 0.5rem;
-  width: 100%;
-  height: 7px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.18);
-  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
 }
 
 .boot-status-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(120deg, #38bdf8 0%, #22c55e 100%);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-  transition: width 300ms ease;
-}
-
-.boot-preload-meta {
-  font-size: 0.74rem;
-  color: #94a3b8;
-  letter-spacing: 0.01em;
+  background: #3b82f6; /* High saturation blue */
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+  transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .boot-spinner {
-  width: 28px;
-  height: 28px;
-  margin-top: 2px;
-  border: 3px solid rgba(148, 163, 184, 0.32);
-  border-top-color: #67e8f9;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #3b82f6;
   border-radius: 50%;
-  animation: bootSpin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  align-self: center;
+  animation: bootSpin 0.6s linear infinite;
+  margin: 0 auto;
 }
 
 @keyframes bootSpin {

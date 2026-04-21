@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { store } from './store';
 import './styles/index.css';
 import App from './App';
 
@@ -26,7 +28,11 @@ function Root() {
     return <div className="fixed inset-0 flex items-center justify-center"><div className="spinner w-12 h-12" /></div>;
   }
 
-  return <App darkMode={darkMode} setDarkMode={setDarkMode} />;
+  return (
+    <Provider store={store}>
+      <App darkMode={darkMode} setDarkMode={setDarkMode} />
+    </Provider>
+  );
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
