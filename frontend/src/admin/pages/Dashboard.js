@@ -5,12 +5,15 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   ArcElement,
+  Filler,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import '../../styles/Dashboard.css';
 import { API_URL } from '../../config/api';
 
@@ -18,7 +21,10 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   ArcElement,
+  Filler,
   Title,
   Tooltip,
   Legend
@@ -35,11 +41,11 @@ const chartOptions = {
   scales: {
     x: {
       grid: { display: false },
-      ticks: { color: '#71717a' },
+      ticks: { color: '#94a3b8' },
     },
     y: {
-      grid: { color: 'rgba(255,255,255,0.08)' },
-      ticks: { color: '#71717a' },
+      grid: { color: 'rgba(148, 163, 184, 0.2)' },
+      ticks: { color: '#94a3b8' },
     },
   },
 };
@@ -50,10 +56,37 @@ const doughnutOptions = {
   plugins: {
     legend: {
       position: 'bottom',
-      labels: { color: '#d4d4d8', padding: 16 },
+      labels: { color: '#cbd5e1', padding: 16 },
     },
   },
   cutout: '70%',
+};
+
+const heroChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { intersect: false, mode: 'index' },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#0f172a',
+      borderColor: 'rgba(56, 189, 248, 0.4)',
+      borderWidth: 1,
+      titleColor: '#f8fafc',
+      bodyColor: '#e2e8f0',
+    },
+  },
+  scales: {
+    x: {
+      grid: { color: 'rgba(148, 163, 184, 0.12)' },
+      ticks: { color: '#94a3b8' },
+    },
+    y: {
+      grid: { color: 'rgba(148, 163, 184, 0.12)' },
+      ticks: { color: '#94a3b8' },
+      beginAtZero: true,
+    },
+  },
 };
 
 function Dashboard() {
@@ -143,7 +176,7 @@ function Dashboard() {
     labels: monthlyActivity.map(m => m.label),
     datasets: [{
       data: monthlyActivity.map(m => m.count),
-      backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'],
+      backgroundColor: ['#22c55e', '#f59e0b', '#38bdf8', '#8b5cf6', '#ec4899', '#14b8a6'],
       borderRadius: 6,
     }],
   }), [monthlyActivity]);
@@ -157,36 +190,75 @@ function Dashboard() {
       labels: topSubjects.map(s => s.name),
       datasets: [{
         data: postCounts,
-        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6'],
+        backgroundColor: ['#22c55e', '#f59e0b', '#38bdf8'],
         borderWidth: 0,
       }],
     };
   }, [subjects, allPosts]);
+
+  const dailyTrend = useMemo(() => {
+    const days = [];
+    for (let i = 13; i >= 0; i -= 1) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+      const count = allPosts.filter(post => {
+        const t = new Date(post.updatedAt || post.date_created || 0).getTime();
+        return t >= d.getTime() && t < next.getTime();
+      }).length;
+      days.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, count });
+    }
+    return days;
+  }, [allPosts]);
+
+  const heroLineData = useMemo(() => ({
+    labels: dailyTrend.map(d => d.label),
+    datasets: [
+      {
+        label: 'Posts Updated',
+        data: dailyTrend.map(d => d.count),
+        borderColor: '#38bdf8',
+        backgroundColor: 'rgba(56, 189, 248, 0.18)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 2,
+        pointRadius: 2,
+        pointHoverRadius: 4,
+        pointBackgroundColor: '#a5f3fc',
+      },
+    ],
+  }), [dailyTrend]);
 
 const CARDS = [
     { 
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>, 
       label: 'Total Subjects', 
       value: stats.subjects,      
-      color: 'blue' 
+      color: 'blue',
+      note: 'Active learning categories',
     },
     { 
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>, 
       label: 'Total Posts',    
       value: stats.posts,         
-      color: 'gold' 
+      color: 'gold',
+      note: 'Published + draft content',
     },
     { 
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>, 
       label: 'Recent uploads', 
       value: stats.recentUploads, 
-      color: 'green' 
+      color: 'green',
+      note: 'Last 7 days with files',
     },
     { 
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>, 
       label: 'Total visitors', 
       value: stats.visitors,      
-      color: 'yellow' 
+      color: 'yellow',
+      note: 'All-time tracked traffic',
     },
   ];
 
@@ -194,6 +266,22 @@ const CARDS = [
 
   return (
     <div className="db">
+      <section className="db-hero" aria-label="Main analytics summary">
+        <div className="db-hero-content">
+          <span className="db-pill">Live Admin Insight</span>
+          <h1>Performance Dashboard</h1>
+          <p>Track publishing velocity, subject growth, and visitor activity with a unified dark analytics workspace.</p>
+          <div className="db-hero-mini">
+            <div><strong>{stats.posts}</strong><span>Total Posts</span></div>
+            <div><strong>{stats.subjects}</strong><span>Subjects</span></div>
+            <div><strong>{stats.visitorsToday}</strong><span>Visitors Today</span></div>
+          </div>
+        </div>
+        <div className="db-hero-chart">
+          <Line data={heroLineData} options={heroChartOptions} />
+        </div>
+      </section>
+
       <div className="db-section-title">Overview</div>
 
       <div className="db-stat-grid">
@@ -203,6 +291,7 @@ const CARDS = [
             <div>
               <div className="db-stat-value">{card.value}</div>
               <div className="db-stat-label">{card.label}</div>
+              <div className="db-stat-note">{card.note}</div>
             </div>
           </div>
         ))}
@@ -231,9 +320,9 @@ const CARDS = [
 
       <div className="db-section-title" style={{ marginTop: 8 }}>Quick Actions</div>
       <div className="db-actions">
-        <Link to="/admin/subjects" className="btn btn-primary btn-sm">➕ New Subject</Link>
-        <Link to="/admin/posts"    className="btn btn-primary btn-sm">➕ New Post</Link>
-        <Link to="/"               className="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">↗ View Site</Link>
+        <Link to="/admin/subjects" className="btn btn-primary btn-sm" aria-label="Create new subject">Create Subject</Link>
+        <Link to="/admin/posts" className="btn btn-primary btn-sm" aria-label="Create new post">Create Post</Link>
+        <Link to="/" className="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer" aria-label="View live website in new tab">Open Live Site</Link>
       </div>
 
       <div className="db-section-title" style={{ marginTop: 32 }}>Visitors & Locations</div>

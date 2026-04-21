@@ -6,20 +6,55 @@ import { getCroppedImg } from '../utils/cropImage';
 import '../../styles/SubjectManagement.css';
 import { API_URL } from '../../config/api';
 
+const MAX_HEADER_SIZE_MB = 5;
+const MAX_HEADER_SIZE_BYTES = MAX_HEADER_SIZE_MB * 1024 * 1024;
+const ACCEPTED_EXTENSIONS = ['.jpeg', '.jpg', '.png', '.webp'];
+const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const getExt = (name = '') => {
+  const i = String(name).lastIndexOf('.');
+  return i >= 0 ? String(name).slice(i).toLowerCase() : '';
+};
+
+const getRejectionMessage = (rejections) => {
+  if (!Array.isArray(rejections) || rejections.length === 0) return 'Invalid file.';
+  const first = rejections[0];
+  const err = first?.errors?.[0];
+  if (!err?.code) return 'Invalid file. Please choose a valid image.';
+  if (err.code === 'file-invalid-type') {
+    return 'Invalid file type. Please upload JPG, PNG, or WEBP.';
+  }
+  if (err.code === 'file-too-large') {
+    return `File is too large. Maximum size is ${MAX_HEADER_SIZE_MB}MB.`;
+  }
+  if (err.code === 'too-many-files') {
+    return 'Please upload one image at a time.';
+  }
+  return err.message || 'Could not process this file.';
+};
+
+const validateHeaderFile = (file) => {
+  if (!file) return 'No file selected.';
+  const mime = String(file.type || '').toLowerCase();
+  const ext = getExt(file.name || '');
+  const mimeOk = ACCEPTED_MIME_TYPES.includes(mime);
+  const extOk = ACCEPTED_EXTENSIONS.includes(ext);
+  if (!mimeOk && !extOk) {
+    return 'Unsupported format. Allowed: JPG, PNG, WEBP.';
+  }
+  if (Number(file.size || 0) > MAX_HEADER_SIZE_BYTES) {
+    return `File exceeds ${MAX_HEADER_SIZE_MB}MB limit.`;
+  }
+  return '';
+};
+
 /* ── Sortable row ─────────────────────────────── */
 function SortableRow({ subject, onEdit, onDelete }) {
   return (
     <tr>
       <td>
         <div className="sm-name-cell">
-          {subject.buttonImage ? (
-            <div 
-              className="sm-thumb-container" 
-              style={{ backgroundColor: subject.bgColor || 'var(--bg-2)' }}
-            >
-              <img src={subject.buttonImage} alt="" className="sm-thumb-img" loading="lazy" />
-            </div>
-          ) : subject.image ? (
+          {subject.image ? (
             <img src={subject.image} alt="" className="sm-thumb" loading="lazy" />
           ) : (
             <div className="sm-thumb sm-placeholder">
@@ -52,7 +87,7 @@ function ImageCropper({ image, onCropComplete, onCancel, initialAspect = 16 / 9 
     setZoom(zoom);
   };
 
-  const onCropCompleteHandler = useCallback((croppedArea, croppedAreaPixels) => {
+  const onCropCompleteHandler = useCallback((_, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -139,16 +174,16 @@ function SubjectManagement() {
   const [saving, setSaving]       = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [cropImage, setCropImage] = useState(null);
-  const [cropTarget, setCropTarget] = useState('image'); // 'image' or 'buttonImage'
+  const [cropTarget] = useState('image');
   const [formData, setFormData] = useState({
     name: '',
     image: '',
-    buttonImage: '',
-    bgColor: '#3b82f6',
   });
   const [headerPreview, setHeaderPreview] = useState('');
-  const [buttonPreview, setButtonPreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState('');
   const [uploadError, setUploadError] = useState('');
 
   useEffect(() => { fetchSubjects(); }, []);
@@ -203,77 +238,110 @@ function SubjectManagement() {
   };
 
   const onDropHeader = useCallback(async (acceptedFiles) => {
+    setUploadError('');
+    setUploadSuccess('');
     const file = acceptedFiles[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File size exceeds 5MB limit.');
+    const validationError = validateHeaderFile(file);
+    if (validationError) {
+      setUploadStatus('');
+      setUploadProgress(0);
+      setUploadError(validationError);
       return;
     }
-    
+
+    setUploadStatus('Preparing image...');
     const reader = new FileReader();
+    reader.onerror = () => {
+      setUploadStatus('');
+      setUploadProgress(0);
+      setUploadError('Could not read the selected file. Please try a different image.');
+    };
     reader.onload = () => {
       setCropImage(reader.result);
-      setCropTarget('image');
+      setUploadStatus('Image ready. Crop and apply to continue.');
       setShowCropper(true);
     };
     reader.readAsDataURL(file);
   }, []);
 
-  const onDropButton = useCallback(async (acceptedFiles) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError('File size exceeds 2MB limit for buttons.');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropImage(reader.result);
-      setCropTarget('buttonImage');
-      setShowCropper(true);
-    };
-    reader.readAsDataURL(file);
+  const onDropHeaderRejected = useCallback((fileRejections) => {
+    setUploadStatus('');
+    setUploadProgress(0);
+    setUploadSuccess('');
+    setUploadError(getRejectionMessage(fileRejections));
   }, []);
 
   const { getRootProps: getHeaderProps, getInputProps: getHeaderInputProps, isDragActive: isHeaderDragActive } = useDropzone({
     onDrop: onDropHeader,
+    onDropRejected: onDropHeaderRejected,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
-    multiple: false
-  });
-
-  const { getRootProps: getButtonProps, getInputProps: getButtonInputProps, isDragActive: isButtonDragActive } = useDropzone({
-    onDrop: onDropButton,
-    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
-    multiple: false
+    multiple: false,
+    maxSize: MAX_HEADER_SIZE_BYTES,
   });
 
   const uploadImage = async (blob, target) => {
     setUploading(true);
+    setUploadError('');
+    setUploadSuccess('');
+    setUploadProgress(0);
+    setUploadStatus('Uploading image...');
     const token = localStorage.getItem('adminToken');
     const formDataFile = new FormData();
     const filename = target === 'image' ? 'header.jpg' : 'button.png';
     formDataFile.append('file', blob, filename);
-    
+
     try {
-      const res = await fetch(`${API_URL}/api/upload`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formDataFile,
+      const data = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${API_URL}/api/upload`, true);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+        xhr.upload.onprogress = (evt) => {
+          if (!evt.lengthComputable) return;
+          const p = Math.round((evt.loaded / evt.total) * 100);
+          setUploadProgress(p);
+          setUploadStatus(`Uploading image... ${p}%`);
+        };
+
+        xhr.onerror = () => reject(new Error('Network error while uploading image.'));
+
+        xhr.onload = () => {
+          let parsed = null;
+          try {
+            parsed = JSON.parse(xhr.responseText || '{}');
+          } catch {
+            parsed = null;
+          }
+
+          if (xhr.status === 401 || xhr.status === 403) {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/admin/login';
+            return;
+          }
+
+          if (xhr.status >= 200 && xhr.status < 300 && parsed?.url) {
+            resolve(parsed);
+            return;
+          }
+
+          reject(new Error(parsed?.message || `Upload failed (${xhr.status}).`));
+        };
+
+        xhr.send(formDataFile);
       });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setFormData(prev => ({ ...prev, [target]: data.url }));
-        if (target === 'image') setHeaderPreview(data.url);
-        else setButtonPreview(data.url);
-        setUploadError('');
-      } else {
-        setUploadError('Upload failed. Please try again.');
-      }
+
+      setFormData(prev => ({ ...prev, [target]: data.url }));
+      if (target === 'image') setHeaderPreview(data.url);
+      setUploadProgress(100);
+      setUploadStatus('Upload complete.');
+      setUploadSuccess('Cover image uploaded successfully.');
     } catch (err) {
       console.error('Upload failed:', err);
-      setUploadError('Upload failed. Please try again.');
+      setUploadStatus('');
+      setUploadProgress(0);
+      setUploadSuccess('');
+      setUploadError(err?.message || 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -286,9 +354,12 @@ function SubjectManagement() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', image: '', buttonImage: '', bgColor: '#3b82f6' });
+    setFormData({ name: '', image: '' });
     setHeaderPreview('');
-    setButtonPreview('');
+    setUploadStatus('');
+    setUploadProgress(0);
+    setUploadSuccess('');
+    setUploadError('');
     setShowForm(true);
   };
   const openEdit = subject => {
@@ -296,14 +367,22 @@ function SubjectManagement() {
     setFormData({
       name: subject.name || '',
       image: subject.image || '',
-      buttonImage: subject.buttonImage || '',
-      bgColor: subject.bgColor || '#3b82f6',
     });
     setHeaderPreview(subject.image || '');
-    setButtonPreview(subject.buttonImage || '');
+    setUploadStatus('');
+    setUploadProgress(0);
+    setUploadSuccess('');
+    setUploadError('');
     setShowForm(true);
   };
-  const closeForm = () => { setShowForm(false); setEditingId(null); };
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setUploadStatus('');
+    setUploadProgress(0);
+    setUploadSuccess('');
+    setUploadError('');
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -381,7 +460,7 @@ function SubjectManagement() {
                 />
               </div>
 
-              <div className="sm-upload-grid">
+              <div className="sm-upload-grid sm-upload-grid-single">
                 <div className="form-group">
                   <label>Header Image (16:9 recommended)</label>
                   <div {...getHeaderProps()} className={`sm-upload-drop ${isHeaderDragActive ? 'active' : ''}`}>
@@ -389,69 +468,48 @@ function SubjectManagement() {
                     {headerPreview ? (
                       <div className="sm-upload-preview">
                         <img src={headerPreview} alt="Header Preview" />
-                        <div className="sm-upload-overlay">Change Image</div>
+                        <div className="sm-upload-overlay">Change Header</div>
                       </div>
                     ) : (
                       <span className="sm-upload-label">
-                        {uploading ? 'Processing...' : 'Drop header image here'}
+                        {uploading ? 'Processing...' : 'Drop header image here or click to upload'}
                       </span>
                     )}
                   </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Button Image (Icon/PNG)</label>
-                  <div {...getButtonProps()} className={`sm-upload-drop ${isButtonDragActive ? 'active' : ''}`}>
-                    <input {...getButtonInputProps()} />
-                    {buttonPreview ? (
-                      <div className="sm-button-preview-container" style={{ backgroundColor: formData.bgColor }}>
-                        <img src={buttonPreview} alt="Button Preview" className="sm-button-img" />
-                        <div className="sm-upload-overlay">Change Icon</div>
+                  <p className="sm-upload-hint">Accepted formats: JPG, PNG, WEBP. Max size: {MAX_HEADER_SIZE_MB}MB.</p>
+                  {(uploadStatus || uploading) && (
+                    <div className="sm-upload-status" aria-live="polite">
+                      <div className="sm-upload-status-head">
+                        <span>{uploadStatus || 'Uploading image...'}</span>
+                        <strong>{uploadProgress}%</strong>
                       </div>
-                    ) : (
-                      <span className="sm-upload-label">
-                        {uploading ? 'Processing...' : 'Drop icon here'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Button Background Color</label>
-                <div className="sm-color-picker">
-                  <input
-                    type="color"
-                    name="bgColor"
-                    value={formData.bgColor}
-                    onChange={handleFormChange}
-                    className="sm-color-input"
-                  />
-                  <span className="sm-color-value">{formData.bgColor}</span>
+                      <div className="sm-upload-progress-track" aria-hidden="true">
+                        <span className="sm-upload-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="sm-preview-section">
-                <label>Subject Button Preview</label>
-                <div className="sm-button-preview-card">
-                  <div 
-                    className="sm-preview-button" 
-                    style={{ backgroundColor: formData.bgColor }}
-                  >
-                    {buttonPreview ? (
-                      <img src={buttonPreview} alt="" className="sm-preview-icon" />
-                    ) : (
-                      <span className="sm-preview-initials">{formData.name ? formData.name.slice(0, 2).toUpperCase() : '??'}</span>
-                    )}
-                  </div>
+                <label>Subject Header Preview</label>
+                <div className="sm-header-preview-card">
+                  {headerPreview ? (
+                    <img src={headerPreview} alt="Subject header preview" className="sm-header-preview-img" />
+                  ) : (
+                    <div className="sm-header-preview-placeholder">
+                      Header preview will appear here
+                    </div>
+                  )}
                   <div className="sm-preview-info">
                     <strong>{formData.name || 'Subject Name'}</strong>
-                    <span>Preview of how it appears on home page</span>
+                    <span>Only header image upload is enabled for cleaner and faster management.</span>
                   </div>
                 </div>
               </div>
 
-              {uploadError && <p className="sm-upload-error">{uploadError}</p>}
+              {uploadError && <p className="sm-upload-error" role="alert">{uploadError}</p>}
+              {uploadSuccess && <p className="sm-upload-success">{uploadSuccess}</p>}
 
               <div className="pm-modal-actions">
                 <button type="submit" className="btn btn-primary" disabled={saving || uploading}>

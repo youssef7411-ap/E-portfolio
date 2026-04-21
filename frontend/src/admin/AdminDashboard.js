@@ -5,6 +5,7 @@ import PostManagement from './pages/PostManagement';
 import Dashboard from './pages/Dashboard';
 import AdminCrashGuard from '../components/AdminCrashGuard';
 import '../styles/Admin.css';
+import '../styles/AdminDesignSystem.css';
 
 const DashboardIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -127,10 +128,10 @@ function AdminDashboard({ setIsAdmin }) {
       {/* Main */}
       <div className="admin-main">
         <header className="admin-topbar">
-          <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>
+          <button className="hamburger-btn" onClick={() => setSidebarOpen(true)} aria-label="Open navigation menu">
             <MenuIcon />
           </button>
-          <span className="admin-topbar-title">
+          <span className="admin-topbar-title" aria-live="polite">
             {NAV.find(n => n.id === activeNav)?.label}
           </span>
         </header>
