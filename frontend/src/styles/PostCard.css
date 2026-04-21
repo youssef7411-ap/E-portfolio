@@ -1,6 +1,6 @@
 /* ─── Post Card ─────────────────────────────────────────────── */
 .pc {
-  padding: var(--space-6);
+  padding: var(--space-4);
   border-radius: var(--radius-md);
   background: var(--surface);
   border: 1px solid var(--border);

@@ -118,27 +118,20 @@ function Home() {
     fetchData();
   }, []);
 
-  const subjectMeta = useMemo(() => {
-    const map = new Map();
+   const subjectMeta = useMemo(() => {
+     const map = new Map();
 
-    for (const post of posts) {
-      const subjectId = String(getSubjectId(post) || '');
-      if (!subjectId) continue;
+     for (const post of posts) {
+       const subjectId = String(getSubjectId(post) || '');
+       if (!subjectId) continue;
 
-      const current = map.get(subjectId) || {
-        postCount: 0,
-        projectCount: 0,
-        lastUpdated: 0,
-      };
+       const current = map.get(subjectId) || { postCount: 0 };
+       current.postCount += 1;
+       map.set(subjectId, current);
+     }
 
-      current.postCount += 1;
-      if (post?.type === 'project') current.projectCount += 1;
-      current.lastUpdated = Math.max(current.lastUpdated, getPostTimestamp(post));
-      map.set(subjectId, current);
-    }
-
-    return map;
-  }, [posts]);
+     return map;
+   }, [posts]);
 
   const sortedSubjects = useMemo(() => (
     [...subjects].sort((a, b) => {
@@ -479,15 +472,15 @@ function Home() {
                 initial={prefersReducedMotion ? false : 'hidden'}
                 animate={prefersReducedMotion ? undefined : 'visible'}
               >
-                {sortedSubjects.map((subject) => (
-                  <SubjectCard
-                    key={subject._id}
-                    subject={subject}
-                    variant="grid"
-                    meta={subjectMeta.get(String(subject._id)) || { postCount: 0, projectCount: 0 }}
-                    onClick={() => navigate(`/subject/${subject._id}`)}
-                  />
-                ))}
+                 {sortedSubjects.map((subject) => (
+                   <SubjectCard
+                     key={subject._id}
+                     subject={subject}
+                     variant="grid"
+                     meta={subjectMeta.get(String(subject._id)) || { postCount: 0 }}
+                     onClick={() => navigate(`/subject/${subject._id}`)}
+                   />
+                 ))}
               </motion.div>
             )}
           </motion.section>
