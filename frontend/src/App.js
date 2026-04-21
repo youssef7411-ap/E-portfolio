@@ -359,9 +359,15 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
 }
 
 function App({ darkMode, setDarkMode }) {
+  const [isAdmin, setIsAdmin] = useState(false);
+  
   return (
     <BrowserRouter>
-      <AppBody darkMode={darkMode} setDarkMode={setDarkMode} />
+      <AppBody 
+        darkMode={darkMode} 
+        setDarkMode={setDarkMode} 
+        setIsAdmin={setIsAdmin} 
+      />
     </BrowserRouter>
   );
 }

@@ -23,6 +23,13 @@ function Root() {
   useEffect(() => {
     const init = async () => {
       try {
+        console.log("React Initializing...");
+        // Remove pre-loader if it exists
+        const preLoader = document.getElementById('pre-loader');
+        if (preLoader) {
+          preLoader.style.opacity = '0';
+          setTimeout(() => preLoader.remove(), 500);
+        }
         setMounted(true);
       } catch (err) {
         console.error("Mounting error:", err);
