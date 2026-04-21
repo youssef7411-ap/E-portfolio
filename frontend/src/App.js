@@ -376,9 +376,8 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
         {location.pathname !== '/admin/login' && (
           <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
         )}
-      </motion.div>
-    
-  );
+       </motion.div>
+   );
 }
 
 function App({ darkMode, setDarkMode }) {
