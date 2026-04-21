@@ -311,7 +311,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
            
            <div className="boot-status-container">
              <div className="boot-status-text">
-               <span>System initializing...</span>
+               <span>Youssef's Portfolio...</span>
                <span>{preloadPercent}%</span>
              </div>
              <div className="boot-status-bar">
