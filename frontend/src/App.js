@@ -370,6 +370,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
 
 function App({ darkMode, setDarkMode }) {
   const [isAdmin, setIsAdmin] = useState(false);
+  console.log("App state:", { isAdmin });
   
   return (
     <BrowserRouter>
