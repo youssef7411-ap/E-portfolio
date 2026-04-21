@@ -25,7 +25,7 @@ function Root() {
   }, [darkMode]);
 
   if (!mounted) {
-    return <div className="fixed inset-0 flex items-center justify-center"><div className="spinner w-12 h-12" /></div>;
+    return <div style={{ background: '#000000', position: 'fixed', inset: 0 }} />;
   }
 
   return (

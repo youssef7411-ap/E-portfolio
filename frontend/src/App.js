@@ -141,34 +141,35 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
     let doneTimer;
 
     const runBootSequence = async () => {
-      await wait(50);
+      // Small delay to ensure styles are applied
+      await wait(100);
 
-      if (!isActive) {
-        return;
-      }
+      if (!isActive) return;
 
       setBootPhase('zoom-in');
 
-      await Promise.allSettled([
-        wait(2200),
-        warmRouteChunks(),
-        preloadPublicGraphics((progress) => {
-          if (isActive) {
-            setPreloadProgress(progress);
-          }
-        }),
-      ]);
-
-      if (!isActive) {
-        return;
+      try {
+        await Promise.allSettled([
+          wait(2500), // Minimum visible time for the technical loading screen
+          warmRouteChunks(),
+          preloadPublicGraphics((progress) => {
+            if (isActive) {
+              setPreloadProgress(progress);
+            }
+          }),
+        ]);
+      } catch (err) {
+        console.error("Boot sequence error:", err);
       }
+
+      if (!isActive) return;
 
       setBootPhase('out');
       doneTimer = window.setTimeout(() => {
         if (isActive) {
           setBootPhase('done');
         }
-      }, 420);
+      }, 500);
     };
 
     runBootSequence();
