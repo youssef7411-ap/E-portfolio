@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
 import AdminCrashGuard from './components/AdminCrashGuard';
+import ScrollToTop from './components/ScrollToTop';
 import { motion } from 'framer-motion';
 import './styles/App.css';
 import { API_URL } from './config/api';
@@ -362,9 +363,10 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
         </Routes>
       </AdminCrashGuard>
       {location.pathname !== '/admin/login' && (
-        <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
-      )}
-     </motion.div>
+         <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
+       )}
+       <ScrollToTop />
+      </motion.div>
   );
 }
 

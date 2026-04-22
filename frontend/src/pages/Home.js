@@ -331,7 +331,7 @@ function Home() {
               className="hero-headline"
               variants={itemVariants}
             >
-              My Work
+              Youssef's E-Portfolio
             </motion.h1>
             
             <motion.div 
@@ -371,6 +371,27 @@ function Home() {
           </div>
 
           <div className="dashboard-shell">
+            <motion.div className="dashboard-stats-ribbon" variants={itemVariants}>
+              <div className="stat-card">
+                <span className="stat-label">Total Subjects</span>
+                <span className="stat-value">{subjects.length}</span>
+              </div>
+              <div className="stat-divider" />
+              <div className="stat-card">
+                <span className="stat-label">Total Uploads</span>
+                <span className="stat-value">{posts.length}</span>
+              </div>
+              <div className="stat-divider" />
+              <div className="stat-card">
+                <span className="stat-label">Latest Activity</span>
+                <span className="stat-value">
+                  {posts.length > 0 
+                    ? new Date(Math.max(...posts.map(p => getPostTimestamp(p)))).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                    : 'No activity yet'}
+                </span>
+              </div>
+            </motion.div>
+
             <div className="dashboard-chart-grid">
               <motion.article className="dashboard-chart-card" variants={itemVariants}>
                 <div className="dashboard-chart-head">
