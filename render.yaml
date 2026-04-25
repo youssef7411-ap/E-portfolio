@@ -7,15 +7,20 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: 18.0.0
+      - key: NODE_ENV
+        value: production
       - key: MONGODB_URI
-        sync: false # User will need to provide this in Render dashboard
+        sync: false
       - key: JWT_SECRET
-        generateValue: true # Generates a random secret if not provided
-      - key: CLOUDINARY_URL
-        sync: false # Optional, if using Cloudinary
+        generateValue: true
+      - key: CLIENT_URL
+        value: "*" # Allow all for now, can be restricted later
+      - key: ALLOW_MEMORY_FALLBACK
+        value: "false"
 
   # Frontend Static Site
   - type: static
