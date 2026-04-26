@@ -16,7 +16,6 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import SubjectGallery from '../components/SubjectGallery';
-import IntroAnimation from '../components/IntroAnimation';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
 
@@ -52,7 +51,6 @@ function Home() {
   const dispatch = useDispatch();
   const { subjects, posts } = useSelector((state) => state.portfolio);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
-  const [introFinished, setIntroFinished] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -256,30 +254,14 @@ function Home() {
     };
   }, [posts, chartPalette]);
 
-  useEffect(() => {
-    if (!introFinished) {
-      const previousOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = previousOverflow;
-      };
-    }
-    document.body.style.overflow = '';
-    return undefined;
-  }, [introFinished]);
-
   return (
     <div className="home">
-      {!introFinished && (
-        <IntroAnimation onIntroComplete={() => setIntroFinished(true)} />
-      )}
-
-      <div className={`main-layout ${introFinished ? 'is-visible' : 'is-hidden'}`}>
+      <div className="main-layout is-visible">
         <motion.header 
           className="portfolio-header"
           initial={{ opacity: 0, y: -50 }}
-          animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
-          transition={{ duration: 1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="container">
             <h1 className="hero-headline">Youssef’s Portfolio</h1>
@@ -290,8 +272,8 @@ function Home() {
           <motion.section
             className="dashboard-section"
             initial={{ opacity: 0, y: 100 }}
-            animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 100 }}
-            transition={{ duration: 1.2, delay: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="container">
               <div className="dashboard-stats-ribbon">
@@ -356,8 +338,8 @@ function Home() {
           <motion.section
             className="gallery-section"
             initial={{ opacity: 0 }}
-            animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: 1.5, delay: 1.6 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.6 }}
           >
             <div className="home-section-head">
               <h3>Subject Archive</h3>
@@ -373,8 +355,8 @@ function Home() {
         <motion.footer 
           className="portfolio-footer-nav"
           initial={{ opacity: 0 }}
-          animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 1, delay: 2 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.8 }}
         >
           <div className="container">
             <div className="footer-actions">
