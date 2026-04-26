@@ -1,12 +1,13 @@
-.gallery-vertical-wrapper {
+.gallery-window-container {
   position: relative;
   width: 100%;
+  height: 100vh;
   background: #020617;
+  overflow: hidden;
 }
 
-.gallery-sticky-viewer {
-  position: sticky;
-  top: 0;
+.gallery-viewer {
+  position: relative;
   height: 100vh;
   width: 100%;
   overflow: hidden;

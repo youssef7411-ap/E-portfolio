@@ -3,93 +3,122 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/SubjectGallery.css';
 
 /**
- * Full-Screen Vertical Pager System for Subjects
+ * Window-based Vertical Pager System
  * 
- * Behavior:
- * - Locks scroll when section is active.
- * - Transitions subjects vertically as full-screen slides.
- * - Snap-like mapping between scroll position and active slide.
- * - Smooth entry/exit at section boundaries.
+ * Features:
+ * - 100vh "Window" that captures scroll.
+ * - Internal slide transitions using wheel/touch.
+ * - Release mechanism to continue page scrolling.
  */
-
-const lerp = (a, b, n) => (1 - n) * a + n * b;
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const SubjectGallery = ({ subjects, meta }) => {
   const navigate = useNavigate();
-  const wrapperRef = useRef(null);
+  const sectionRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [containerHeight, setContainerHeight] = useState('auto');
+  const [isIntersecting, setIsIntersecting] = useState(false);
   
-  // Ref to track scroll state for smooth interpolation
-  const scrollState = useRef({
-    current: 0,
-    target: 0,
-    ease: 0.1,
-    progress: 0
-  });
+  const lastWheelTime = useRef(0);
+  const scrollCooldown = 800; // ms between slide changes
+  const touchStart = useRef(0);
 
-  // Calculate total height based on number of subjects
-  // Each subject gets 100vh of scroll distance
+  // Intersection Observer to detect when section is in view
   useEffect(() => {
-    if (subjects.length > 0) {
-      setContainerHeight(`${subjects.length * 100}vh`);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting);
+      },
+      { threshold: 0.6 } // Section must be 60% visible to capture scroll
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
     }
-  }, [subjects.length]);
 
+    return () => observer.disconnect();
+  }, []);
+
+  // Handle Wheel Events
   useEffect(() => {
-    let rafId;
+    const handleWheel = (e) => {
+      if (!isIntersecting) return;
 
-    const handleScroll = () => {
-      if (!wrapperRef.current) return;
-
-      const rect = wrapperRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      
-      // Calculate how far we've scrolled into the section (0 to limit)
-      const totalScrollDistance = (subjects.length - 1) * viewportHeight;
-      const currentScrollIntoSection = clamp(-rect.top, 0, totalScrollDistance);
-      
-      scrollState.current.target = currentScrollIntoSection;
-    };
-
-    const render = () => {
-      const state = scrollState.current;
-      state.current = lerp(state.current, state.target, state.ease);
-      
-      const viewportHeight = window.innerHeight;
-      const progress = state.current / viewportHeight; // index with fractional part
-      const newIndex = Math.round(progress);
-
-      if (newIndex !== activeIndex) {
-        setActiveIndex(newIndex);
+      const now = Date.now();
+      if (now - lastWheelTime.current < scrollCooldown) {
+        // Still in cooldown, but prevent default to keep "locked" feel
+        if ((e.deltaY > 0 && activeIndex < subjects.length - 1) || 
+            (e.deltaY < 0 && activeIndex > 0)) {
+          if (e.cancelable) e.preventDefault();
+        }
+        return;
       }
 
-      // We use the raw progress for fine-grained animations (like parallax)
-      state.progress = progress;
-
-      rafId = requestAnimationFrame(render);
+      if (e.deltaY > 0) {
+        // Scrolling Down
+        if (activeIndex < subjects.length - 1) {
+          if (e.cancelable) e.preventDefault();
+          setActiveIndex(prev => prev + 1);
+          lastWheelTime.current = now;
+        }
+        // If at last slide, don't prevent default -> page scrolls down naturally
+      } else if (e.deltaY < 0) {
+        // Scrolling Up
+        if (activeIndex > 0) {
+          if (e.cancelable) e.preventDefault();
+          setActiveIndex(prev => prev - 1);
+          lastWheelTime.current = now;
+        }
+        // If at first slide, don't prevent default -> page scrolls up naturally
+      }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    render();
+    const handleTouchStart = (e) => {
+      touchStart.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isIntersecting) return;
+      
+      const touchEnd = e.touches[0].clientY;
+      const deltaY = touchStart.current - touchEnd;
+
+      if (Math.abs(deltaY) < 50) return; // threshold
+
+      const now = Date.now();
+      if (now - lastWheelTime.current < scrollCooldown) return;
+
+      if (deltaY > 0) {
+        if (activeIndex < subjects.length - 1) {
+          if (e.cancelable) e.preventDefault();
+          setActiveIndex(prev => prev + 1);
+          lastWheelTime.current = now;
+        }
+      } else {
+        if (activeIndex > 0) {
+          if (e.cancelable) e.preventDefault();
+          setActiveIndex(prev => prev - 1);
+          lastWheelTime.current = now;
+        }
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      cancelAnimationFrame(rafId);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [subjects.length, activeIndex]);
+  }, [isIntersecting, activeIndex, subjects.length]);
 
   return (
     <div 
-      className="gallery-vertical-wrapper" 
-      ref={wrapperRef} 
-      style={{ height: containerHeight }}
+      className="gallery-window-container" 
+      ref={sectionRef}
     >
-      <div className="gallery-sticky-viewer">
+      <div className="gallery-viewer">
         {subjects.map((subject, index) => {
-          // Calculate individual slide offset based on progress
-          const offset = index - activeIndex;
           const isActive = index === activeIndex;
           const isPast = index < activeIndex;
           const isFuture = index > activeIndex;
@@ -100,8 +129,9 @@ const SubjectGallery = ({ subjects, meta }) => {
               className={`gallery-slide ${isActive ? 'active' : ''} ${isPast ? 'past' : ''} ${isFuture ? 'future' : ''}`}
               style={{
                 zIndex: subjects.length - index,
-                opacity: isActive ? 1 : 0,
-                transform: `translate3d(0, ${isActive ? 0 : offset * 20}%, 0)`
+                transform: `translate3d(0, ${isActive ? 0 : (isPast ? -100 : 100)}%, 0)`,
+                visibility: (isActive || isPast || isFuture) ? 'visible' : 'hidden',
+                opacity: isActive ? 1 : 0
               }}
               onClick={() => navigate(`/subject/${subject._id}`)}
             >
@@ -156,10 +186,7 @@ const SubjectGallery = ({ subjects, meta }) => {
             <div 
               key={i} 
               className={`pagination-dot ${i === activeIndex ? 'active' : ''}`}
-              onClick={() => {
-                const targetY = wrapperRef.current.offsetTop + (i * window.innerHeight);
-                window.scrollTo({ top: targetY, behavior: 'smooth' });
-              }}
+              onClick={() => setActiveIndex(i)}
             />
           ))}
         </div>
@@ -169,7 +196,7 @@ const SubjectGallery = ({ subjects, meta }) => {
           <div className="mouse">
             <div className="wheel" />
           </div>
-          <span>Scroll to explore</span>
+          <span>{activeIndex === subjects.length - 1 ? 'End of section' : 'Scroll to explore'}</span>
         </div>
       </div>
     </div>
