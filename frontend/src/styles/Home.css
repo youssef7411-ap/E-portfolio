@@ -6,6 +6,24 @@
   background: var(--bg-color);
   position: relative;
   overflow-x: hidden;
+  background-color: var(--bg-main);
+}
+
+.container-full {
+  width: 100%;
+  padding: 0;
+}
+
+.home-panel-gallery {
+  padding: var(--space-20) 0;
+}
+
+.home-panel-gallery .home-section-head {
+  padding: 0 var(--space-8);
+  margin-bottom: var(--space-8);
+  max-width: var(--container-width);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .home-header {
@@ -366,6 +384,22 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 32px;
+}
+
+.skeleton-gallery {
+  display: flex;
+  gap: 15vw;
+  padding: 0 10vw;
+  overflow: hidden;
+}
+
+.skeleton-gallery-item {
+  flex-shrink: 0;
+  width: 70vw;
+  height: 80vh;
+  border: 1px solid var(--border-color);
+  background: #0A0A0A;
+  animation: loadingSheen 1.5s infinite linear;
 }
 
 .skeleton-grid {

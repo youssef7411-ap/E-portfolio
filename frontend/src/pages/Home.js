@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,7 +15,8 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import SubjectCard from '../components/SubjectCard';
+import SubjectGallery from '../components/SubjectGallery';
+import IntroAnimation from '../components/IntroAnimation';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
 
@@ -30,29 +31,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.2,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  },
-};
 
 const getSubjectId = (post) => post?.subject_id?._id || post?.subject_id || null;
 
@@ -71,10 +49,10 @@ const getPostTimestamp = (post) => {
 };
 
 function Home() {
-  const prefersReducedMotion = useReducedMotion();
   const dispatch = useDispatch();
   const { subjects, posts, loading } = useSelector((state) => state.portfolio);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [introFinished, setIntroFinished] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -319,24 +297,34 @@ function Home() {
 
   return (
     <div className="home">
+      <AnimatePresence>
+        {!introFinished && (
+          <IntroAnimation onComplete={() => setIntroFinished(true)} />
+        )}
+      </AnimatePresence>
+
       <motion.section
         className="home-hero"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: introFinished ? 1 : 0 }}
+        transition={{ duration: 1, ease: "easeOut" }}
       >
         <div className="container">
           <div className="hero-content">
             <motion.h1 
               className="hero-headline"
-              variants={itemVariants}
+              initial={{ opacity: 0, y: -50 }}
+              animate={introFinished ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
             >
-              Youssef's E-Portfolio
+              Youssef’s Portfolio
             </motion.h1>
             
             <motion.div 
               className="hero-actions"
-              variants={itemVariants}
+              initial={{ opacity: 0 }}
+              animate={introFinished ? { opacity: 1 } : {}}
+              transition={{ duration: 0.6, delay: 0.8 }}
             >
               <div className="explore-cta-controls">
                 <select
@@ -370,8 +358,13 @@ function Home() {
             </motion.div>
           </div>
 
-          <div className="dashboard-shell">
-            <motion.div className="dashboard-stats-ribbon" variants={itemVariants}>
+          <motion.div 
+            className="dashboard-shell"
+            initial={{ opacity: 0, y: 100 }}
+            animate={introFinished ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 1, delay: 1, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="dashboard-stats-ribbon">
               <div className="stat-card">
                 <span className="stat-label">Total Subjects</span>
                 <span className="stat-value">{subjects.length}</span>
@@ -390,82 +383,67 @@ function Home() {
                     : 'No activity yet'}
                 </span>
               </div>
-            </motion.div>
+            </div>
 
             <div className="dashboard-chart-grid">
-              <motion.article className="dashboard-chart-card" variants={itemVariants}>
+              <article className="dashboard-chart-card">
                 <div className="dashboard-chart-head">
                   <h3>Total Uploads Per Subject</h3>
                 </div>
                 <div className="dashboard-chart-body">
                   <Bar data={uploadsBySubjectData} options={barOptions} />
                 </div>
-              </motion.article>
+              </article>
 
-              <motion.article className="dashboard-chart-card" variants={itemVariants}>
+              <article className="dashboard-chart-card">
                 <div className="dashboard-chart-head">
                   <h3>Data Type Distribution</h3>
                 </div>
                 <div className="dashboard-chart-body">
                   <Doughnut data={distributionData} options={donutOptions} />
                 </div>
-              </motion.article>
+              </article>
 
-              <motion.article className="dashboard-chart-card" variants={itemVariants}>
+              <article className="dashboard-chart-card">
                 <div className="dashboard-chart-head">
                   <h3>Activity Frequency</h3>
                 </div>
                 <div className="dashboard-chart-body">
                   <Line data={activityData} options={lineOptions} />
                 </div>
-              </motion.article>
+              </article>
             </div>
-          </div>
+          </motion.div>
         </div>
       </motion.section>
 
-      <main className="home-main">
-        <div className="container">
-          <motion.section
-            className="home-panel glass"
-            variants={containerVariants}
-            initial={prefersReducedMotion ? false : 'hidden'}
-            animate={prefersReducedMotion ? undefined : 'visible'}
-          >
+      <motion.main 
+        className="home-main"
+        initial={{ opacity: 0 }}
+        animate={introFinished ? { opacity: 1 } : {}}
+        transition={{ duration: 1, delay: 1.5 }}
+      >
+        <div className="container-full">
+          <section className="home-panel-gallery">
             <div className="home-section-head">
-              <h3>All Subjects</h3>
-              <span>{sortedSubjects.length} shown</span>
+              <h3>Explore Subjects</h3>
+              <span>{sortedSubjects.length} subjects</span>
             </div>
 
             {loading ? (
               <div className="section-loading">
-                <div className="skeleton-grid">
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="skeleton-card" />
+                <div className="skeleton-gallery">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="skeleton-gallery-item" />
                   ))}
                 </div>
               </div>
             ) : (
-              <motion.div
-                className="subjects-grid"
-                variants={containerVariants}
-                initial={prefersReducedMotion ? false : 'hidden'}
-                animate={prefersReducedMotion ? undefined : 'visible'}
-              >
-                 {sortedSubjects.map((subject) => (
-                   <SubjectCard
-                     key={subject._id}
-                     subject={subject}
-                     variant="grid"
-                     meta={subjectMeta.get(String(subject._id)) || { postCount: 0 }}
-                     onClick={() => navigate(`/subject/${subject._id}`)}
-                   />
-                 ))}
-              </motion.div>
+              <SubjectGallery subjects={sortedSubjects} meta={subjectMeta} />
             )}
-          </motion.section>
+          </section>
         </div>
-      </main>
+      </motion.main>
     </div>
   );
 }

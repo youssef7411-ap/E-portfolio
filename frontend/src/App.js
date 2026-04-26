@@ -159,7 +159,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
       try {
         console.log("Starting asset preloads...");
         await Promise.allSettled([
-          wait(2500), // Minimum visible time for the technical loading screen
+          wait(800), // Reduced from 2500 to allow IntroAnimation to take over sooner
           warmRouteChunks(),
           preloadPublicGraphics((progress) => {
             if (isActive) {
