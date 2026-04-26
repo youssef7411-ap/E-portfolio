@@ -18,8 +18,9 @@ const SubjectGallery = ({ subjects, meta }) => {
   const [isIntersecting, setIsIntersecting] = useState(false);
   
   const lastWheelTime = useRef(0);
-  const scrollCooldown = 800; // ms between slide changes
+  const scrollCooldown = 1100; // Increased cooldown to match/exceed CSS transition (0.8s)
   const touchStart = useRef(0);
+  const wheelThreshold = 40; // Minimum delta to trigger a slide change
 
   // Intersection Observer to detect when section is in view
   useEffect(() => {
@@ -43,31 +44,34 @@ const SubjectGallery = ({ subjects, meta }) => {
       if (!isIntersecting) return;
 
       const now = Date.now();
+      const delta = e.deltaY;
+      
+      // Ignore micro-scrolls
+      if (Math.abs(delta) < wheelThreshold) return;
+
       if (now - lastWheelTime.current < scrollCooldown) {
-        // Still in cooldown, but prevent default to keep "locked" feel
-        if ((e.deltaY > 0 && activeIndex < subjects.length - 1) || 
-            (e.deltaY < 0 && activeIndex > 0)) {
+        // Still in cooldown, strictly block transition
+        if ((delta > 0 && activeIndex < subjects.length - 1) || 
+            (delta < 0 && activeIndex > 0)) {
           if (e.cancelable) e.preventDefault();
         }
         return;
       }
 
-      if (e.deltaY > 0) {
+      if (delta > 0) {
         // Scrolling Down
         if (activeIndex < subjects.length - 1) {
           if (e.cancelable) e.preventDefault();
           setActiveIndex(prev => prev + 1);
           lastWheelTime.current = now;
         }
-        // If at last slide, don't prevent default -> page scrolls down naturally
-      } else if (e.deltaY < 0) {
+      } else if (delta < 0) {
         // Scrolling Up
         if (activeIndex > 0) {
           if (e.cancelable) e.preventDefault();
           setActiveIndex(prev => prev - 1);
           lastWheelTime.current = now;
         }
-        // If at first slide, don't prevent default -> page scrolls up naturally
       }
     };
 
