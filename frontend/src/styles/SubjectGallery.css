@@ -1,138 +1,150 @@
-.gallery-section {
+.gallery-wrapper {
+  position: relative;
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  position: relative;
-  background: var(--bg-main);
-  display: flex;
-  align-items: center;
+  background: #020617;
 }
 
-.gallery-container {
-  display: flex;
+.gallery-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
   height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gallery-horizontal {
+  display: flex;
+  height: 100%;
+  width: fit-content;
+  align-items: center;
   padding: 0 10vw;
-  will-change: transform;
+  z-index: 2;
+  position: relative;
 }
 
 .gallery-item {
   flex-shrink: 0;
-  width: 70vw;
-  height: 80vh;
+  width: 80vw;
+  height: 70vh;
   margin-right: 15vw;
-  position: relative;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.gallery-inner {
+.gallery-item:hover {
+  transform: scale(1.02);
+}
+
+.gallery-image-container {
   width: 100%;
   height: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.gallery-image-wrapper {
-  width: 100%;
-  height: 70%;
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.gallery-image {
-  width: 130%; /* Extra width for parallax */
+.gallery-img-source {
+  width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.gallery-overlay {
   position: absolute;
-  left: -15%;
   top: 0;
-  will-change: transform;
-  filter: grayscale(20%) contrast(1.1);
-  transition: filter 0.4s ease;
-}
-
-.gallery-item:hover .gallery-image {
-  filter: grayscale(0%) contrast(1);
-}
-
-.gallery-content {
-  margin-top: var(--space-8);
-  position: relative;
-  z-index: 2;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(to top, rgba(2, 6, 23, 0.8) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .gallery-index {
-  position: absolute;
-  top: -80px;
-  right: 0;
-  font-family: var(--font-family-mono);
-  font-size: 8vw;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.05);
-  line-height: 1;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.gallery-title {
-  font-size: clamp(3rem, 8vw, 6rem);
-  font-weight: 800;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: -0.05em;
-  line-height: 0.9;
-  color: var(--text-main);
-  will-change: transform;
-}
-
-.gallery-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.gallery-projects {
   font-family: var(--font-family-mono);
   font-size: 0.9rem;
   color: var(--primary-color);
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+
+.gallery-title {
+  font-family: var(--font-family-base);
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 20px;
   text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.gallery-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px;
+}
+
+.gallery-meta span {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .gallery-explore {
-  font-size: 1rem;
+  color: #fff !important;
   font-weight: 600;
-  color: var(--text-muted);
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .gallery-item:hover .gallery-explore {
-  color: var(--text-main);
   transform: translateX(10px);
 }
 
 @media (max-width: 768px) {
   .gallery-item {
-    width: 85vw;
+    width: 90vw;
+    height: 60vh;
     margin-right: 10vw;
   }
   
-  .gallery-container {
-    padding: 0 5vw;
+  .gallery-overlay {
+    padding: 24px;
   }
-  
-  .gallery-title {
-    font-size: 2.5rem;
-  }
-  
-  .gallery-image-wrapper {
-    height: 60%;
-  }
+}
+
+/* Skeleton Loading */
+.skeleton-gallery {
+  display: flex;
+  padding: 0 10vw;
+  overflow: hidden;
+}
+
+.skeleton-gallery-item {
+  flex-shrink: 0;
+  width: 80vw;
+  height: 70vh;
+  margin-right: 15vw;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: loadingSheen 1.5s infinite linear;
+}
+
+@keyframes loadingSheen {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
 }

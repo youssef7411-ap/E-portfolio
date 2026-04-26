@@ -356,12 +356,21 @@
   }
 }
 
+.home-panel-gallery {
+  padding: 100px 0;
+  margin: 0;
+  background: #020617;
+}
+
 .home-section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   margin-bottom: 32px;
   border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  padding-left: 10vw;
+  padding-right: 10vw;
 }
 
 .home-section-head h3 {

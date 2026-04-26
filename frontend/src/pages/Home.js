@@ -305,17 +305,14 @@ function Home() {
 
       <motion.section
         className="home-hero"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: introFinished ? 1 : 0 }}
-        transition={{ duration: 1, ease: "easeOut" }}
       >
         <div className="container">
           <div className="hero-content">
             <motion.h1 
               className="hero-headline"
               initial={{ opacity: 0, y: -50 }}
-              animate={introFinished ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
+              transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               Youssef’s Portfolio
             </motion.h1>
@@ -323,8 +320,8 @@ function Home() {
             <motion.div 
               className="hero-actions"
               initial={{ opacity: 0 }}
-              animate={introFinished ? { opacity: 1 } : {}}
-              transition={{ duration: 0.6, delay: 0.8 }}
+              animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
             >
               <div className="explore-cta-controls">
                 <select
@@ -360,9 +357,9 @@ function Home() {
 
           <motion.div 
             className="dashboard-shell"
-            initial={{ opacity: 0, y: 100 }}
-            animate={introFinished ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 1, delay: 1, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 50 }}
+            animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+            transition={{ duration: 1.2, delay: 1, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="dashboard-stats-ribbon">
               <div className="stat-card">
@@ -419,9 +416,9 @@ function Home() {
 
       <motion.main 
         className="home-main"
-        initial={{ opacity: 0 }}
-        animate={introFinished ? { opacity: 1 } : {}}
-        transition={{ duration: 1, delay: 1.5 }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+        transition={{ duration: 1.2, delay: 1.8, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="container-full">
           <section className="home-panel-gallery">
