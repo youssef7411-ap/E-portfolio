@@ -134,18 +134,10 @@ void main() {
 }
 `;
 
-const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) => {
+const IntroAnimation = ({ onIntroComplete }) => {
   const containerRef = useRef();
   const canvasRef = useRef();
-  const interactionRef = useRef();
   const introOverlayRef = useRef();
-  const uniformRefs = useRef(null);
-  const hoverRef = useRef(false);
-  const canInteractRef = useRef(enableScrollInteraction);
-
-  useEffect(() => {
-    canInteractRef.current = enableScrollInteraction;
-  }, [enableScrollInteraction]);
 
   useEffect(() => {
     const scene = new THREE.Scene();
@@ -203,12 +195,15 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
           imageInfos: [{ uvs: { xStart: 0, xEnd: 1, yStart: 1, yEnd: 0 } }],
         };
       }
-      
-      const atlasWidth = Math.max(...validImages.map((img) => img.width));
-      let totalHeight = 0;
-      validImages.forEach((img) => {
-        totalHeight += img.height;
-      });
+
+      const maxTextureSize = Math.max(1024, renderer.capabilities.maxTextureSize || 4096);
+      const maxAtlasHeight = Math.floor(maxTextureSize * 0.92);
+      const totalOriginalHeight = validImages.reduce((sum, img) => sum + img.height, 0);
+      const maxOriginalWidth = Math.max(...validImages.map((img) => img.width));
+      const scaleRatio = totalOriginalHeight > maxAtlasHeight ? maxAtlasHeight / totalOriginalHeight : 1;
+      const atlasWidth = Math.max(1, Math.floor(maxOriginalWidth * scaleRatio));
+      const scaledHeights = validImages.map((img) => Math.max(1, Math.floor(img.height * scaleRatio)));
+      const totalHeight = scaledHeights.reduce((sum, height) => sum + height, 0);
 
       const canvas = document.createElement('canvas');
       canvas.width = atlasWidth;
@@ -218,19 +213,20 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       const imageInfos = [];
       let currentY = 0;
 
-      validImages.forEach((img) => {
-        ctx.drawImage(img, 0, currentY);
+      validImages.forEach((img, index) => {
+        const drawHeight = scaledHeights[index];
+        ctx.drawImage(img, 0, currentY, atlasWidth, drawHeight);
         
         imageInfos.push({
           uvs: {
             xStart: 0,
-            xEnd: img.width / atlasWidth,
+            xEnd: 1,
             yStart: 1 - currentY / totalHeight,
-            yEnd: 1 - (currentY + img.height) / totalHeight,
+            yEnd: 1 - (currentY + drawHeight) / totalHeight,
           }
         });
 
-        currentY += img.height;
+        currentY += drawHeight;
       });
 
       const atlasTexture = new THREE.CanvasTexture(canvas);
@@ -294,8 +290,6 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       geometry.setAttribute('aIndex', new THREE.InstancedBufferAttribute(indices, 1));
 
       scene.add(instancedMesh);
-      uniformRefs.current = material.uniforms;
-
       const anim = gsap.timeline({
         onComplete: () => {
           if (isDisposed) return;
@@ -349,32 +343,11 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       });
     };
 
-    const handleWheel = (event) => {
-      if (!canInteractRef.current || !hoverRef.current || !uniformRefs.current) return;
-      const scaledDelta = (event.deltaY * 2.4 * window.innerHeight) / Math.max(window.innerHeight, 1);
-      uniformRefs.current.uSpeedY.value += scaledDelta * 0.01;
-    };
-
-    const handleMouseEnter = () => {
-      hoverRef.current = true;
-    };
-
-    const handleMouseLeave = () => {
-      hoverRef.current = false;
-    };
-
-    const interactionEl = interactionRef.current;
     window.addEventListener('resize', handleResize);
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    interactionEl?.addEventListener('mouseenter', handleMouseEnter);
-    interactionEl?.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       isDisposed = true;
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('wheel', handleWheel);
-      interactionEl?.removeEventListener('mouseenter', handleMouseEnter);
-      interactionEl?.removeEventListener('mouseleave', handleMouseLeave);
       if (resizeRaf.id) window.cancelAnimationFrame(resizeRaf.id);
       if (introTimeline.current) introTimeline.current.kill();
       cancelAnimationFrame(animationId);
@@ -400,10 +373,6 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       }}
     >
       <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
-      <div
-        ref={interactionRef}
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'auto' }}
-      />
       <div
         ref={introOverlayRef}
         style={{

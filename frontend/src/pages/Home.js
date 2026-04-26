@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
@@ -53,16 +53,6 @@ function Home() {
   const { subjects, posts } = useSelector((state) => state.portfolio);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [introFinished, setIntroFinished] = useState(false);
-  const [subjectScrollOffset, setSubjectScrollOffset] = useState(0);
-  const [subjectScrollMode, setSubjectScrollMode] = useState(false);
-  const subjectsSectionRef = useRef(null);
-  const galleryWrapperRef = useRef(null);
-  const galleryTrackRef = useRef(null);
-  const maxSubjectOffsetRef = useRef(0);
-  const introFinishedRef = useRef(false);
-  const subjectScrollModeRef = useRef(false);
-  const subjectOffsetRef = useRef(0);
-  const wheelRafRef = useRef(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -267,18 +257,6 @@ function Home() {
   }, [posts, chartPalette]);
 
   useEffect(() => {
-    introFinishedRef.current = introFinished;
-  }, [introFinished]);
-
-  useEffect(() => {
-    subjectScrollModeRef.current = subjectScrollMode;
-  }, [subjectScrollMode]);
-
-  useEffect(() => {
-    subjectOffsetRef.current = subjectScrollOffset;
-  }, [subjectScrollOffset]);
-
-  useEffect(() => {
     if (!introFinished) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
@@ -290,99 +268,11 @@ function Home() {
     return undefined;
   }, [introFinished]);
 
-  useEffect(() => {
-    const updateSubjectLimits = () => {
-      if (!galleryWrapperRef.current || !galleryTrackRef.current) {
-        maxSubjectOffsetRef.current = 0;
-        return;
-      }
-      maxSubjectOffsetRef.current = Math.max(
-        0,
-        galleryTrackRef.current.scrollWidth - galleryWrapperRef.current.clientWidth
-      );
-      setSubjectScrollOffset((prev) => Math.min(prev, maxSubjectOffsetRef.current));
-    };
-
-    updateSubjectLimits();
-    window.addEventListener('resize', updateSubjectLimits);
-    return () => window.removeEventListener('resize', updateSubjectLimits);
-  }, [sortedSubjects.length]);
-
-  useEffect(() => {
-    const HEADER_GUARD_PX = 120;
-    const ENTRY_TOP_RATIO = 0.8;
-    const ENTRY_BOTTOM_RATIO = 0.2;
-
-    const flushOffset = () => {
-      wheelRafRef.current = 0;
-      setSubjectScrollOffset(subjectOffsetRef.current);
-    };
-
-    const scheduleOffsetFlush = () => {
-      if (wheelRafRef.current) return;
-      wheelRafRef.current = window.requestAnimationFrame(flushOffset);
-    };
-
-    const handleWheel = (event) => {
-      if (!introFinishedRef.current) {
-        event.preventDefault();
-        return;
-      }
-
-      const section = subjectsSectionRef.current;
-      if (!section) return;
-
-      const rect = section.getBoundingClientRect();
-      const sectionEntryThreshold = window.innerHeight * ENTRY_TOP_RATIO;
-      const sectionExitThreshold = window.innerHeight * ENTRY_BOTTOM_RATIO;
-      const inSubjectsZone = rect.top <= sectionEntryThreshold && rect.bottom >= sectionExitThreshold;
-
-      const maxOffset = maxSubjectOffsetRef.current;
-      if (maxOffset <= 0) return;
-
-      const delta = event.deltaY;
-      const movingBackward = delta < 0;
-      const movingForward = delta > 0;
-      const isHorizontalMode = subjectScrollModeRef.current;
-      const atStart = subjectOffsetRef.current <= 0.5;
-
-      if (isHorizontalMode && movingBackward && atStart && rect.top >= HEADER_GUARD_PX) {
-        subjectScrollModeRef.current = false;
-        setSubjectScrollMode(false);
-        return;
-      }
-
-      const shouldCapture = isHorizontalMode || (inSubjectsZone && movingForward);
-      if (!shouldCapture) return;
-
-      event.preventDefault();
-
-      if (!isHorizontalMode) {
-        subjectScrollModeRef.current = true;
-        setSubjectScrollMode(true);
-      }
-
-      const nextOffset = Math.min(maxOffset, Math.max(0, subjectOffsetRef.current + delta));
-      subjectOffsetRef.current = nextOffset;
-      scheduleOffsetFlush();
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      if (wheelRafRef.current) {
-        window.cancelAnimationFrame(wheelRafRef.current);
-        wheelRafRef.current = 0;
-      }
-    };
-  }, []);
-
   return (
     <div className="home">
-      <IntroAnimation
-        onIntroComplete={() => setIntroFinished(true)}
-        enableScrollInteraction={introFinished}
-      />
+      {!introFinished && (
+        <IntroAnimation onIntroComplete={() => setIntroFinished(true)} />
+      )}
 
       <div className={`main-layout ${introFinished ? 'is-visible' : 'is-hidden'}`}>
         <motion.header 
@@ -464,8 +354,7 @@ function Home() {
           </motion.section>
 
           <motion.section
-            ref={subjectsSectionRef}
-            className={`gallery-section ${subjectScrollMode ? 'horizontal-mode' : ''}`}
+            className="gallery-section"
             initial={{ opacity: 0 }}
             animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
             transition={{ duration: 1.5, delay: 1.6 }}
@@ -477,9 +366,6 @@ function Home() {
             <SubjectGallery
               subjects={sortedSubjects}
               meta={subjectMeta}
-              horizontalOffset={subjectScrollOffset}
-              wrapperRef={galleryWrapperRef}
-              trackRef={galleryTrackRef}
             />
           </motion.section>
         </main>
