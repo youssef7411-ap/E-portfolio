@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -53,6 +53,13 @@ function Home() {
   const { subjects, posts } = useSelector((state) => state.portfolio);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [introFinished, setIntroFinished] = useState(false);
+  const [subjectScrollOffset, setSubjectScrollOffset] = useState(0);
+  const [subjectScrollMode, setSubjectScrollMode] = useState(false);
+  const [webglHoverEnabled, setWebglHoverEnabled] = useState(false);
+  const subjectsSectionRef = useRef(null);
+  const galleryWrapperRef = useRef(null);
+  const galleryTrackRef = useRef(null);
+  const maxSubjectOffsetRef = useRef(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -256,13 +263,77 @@ function Home() {
     };
   }, [posts, chartPalette]);
 
+  useEffect(() => {
+    if (!introFinished) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+    document.body.style.overflow = '';
+    return undefined;
+  }, [introFinished]);
+
+  useEffect(() => {
+    const updateSubjectLimits = () => {
+      if (!galleryWrapperRef.current || !galleryTrackRef.current) {
+        maxSubjectOffsetRef.current = 0;
+        return;
+      }
+      maxSubjectOffsetRef.current = Math.max(
+        0,
+        galleryTrackRef.current.scrollWidth - galleryWrapperRef.current.clientWidth
+      );
+      setSubjectScrollOffset((prev) => Math.min(prev, maxSubjectOffsetRef.current));
+    };
+
+    updateSubjectLimits();
+    window.addEventListener('resize', updateSubjectLimits);
+    return () => window.removeEventListener('resize', updateSubjectLimits);
+  }, [sortedSubjects.length]);
+
+  useEffect(() => {
+    const handleWheel = (event) => {
+      if (!introFinished) {
+        event.preventDefault();
+        return;
+      }
+
+      const section = subjectsSectionRef.current;
+      if (!section) return;
+
+      const rect = section.getBoundingClientRect();
+      const sectionEntryThreshold = window.innerHeight * 0.78;
+      const sectionExitThreshold = window.innerHeight * 0.2;
+      const inSubjectsZone = rect.top <= sectionEntryThreshold && rect.bottom >= sectionExitThreshold;
+
+      if (!inSubjectsZone && !subjectScrollMode) return;
+
+      setSubjectScrollMode(true);
+      event.preventDefault();
+
+      const maxOffset = maxSubjectOffsetRef.current;
+      const nextOffset = Math.min(maxOffset, Math.max(0, subjectScrollOffset + event.deltaY));
+      setSubjectScrollOffset(nextOffset);
+
+      if (nextOffset <= 0 && event.deltaY < 0) {
+        setSubjectScrollMode(false);
+        const targetTop = window.scrollY + rect.top - 80;
+        window.scrollTo({ top: Math.max(targetTop, 0), behavior: 'smooth' });
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [introFinished, subjectScrollMode, subjectScrollOffset]);
+
   return (
     <div className="home">
-      <AnimatePresence>
-        {!introFinished && (
-          <IntroAnimation key="intro" onComplete={() => setIntroFinished(true)} />
-        )}
-      </AnimatePresence>
+      <IntroAnimation
+        onIntroComplete={() => setIntroFinished(true)}
+        enableScrollInteraction={webglHoverEnabled && introFinished}
+      />
 
       <div className={`main-layout ${introFinished ? 'is-visible' : 'is-hidden'}`}>
         <motion.header 
@@ -276,25 +347,12 @@ function Home() {
           </div>
         </motion.header>
 
-        <main>
-          <motion.section 
-            className="gallery-section"
-            initial={{ opacity: 0 }}
-            animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
-            transition={{ duration: 1.5, delay: 1 }}
-          >
-            <div className="home-section-head">
-              <h3>Subject Archive</h3>
-              <span>Explore the work</span>
-            </div>
-            <SubjectGallery subjects={sortedSubjects} meta={subjectMeta} />
-          </motion.section>
-
-          <motion.section 
+        <main onMouseEnter={() => setWebglHoverEnabled(true)} onMouseLeave={() => setWebglHoverEnabled(false)}>
+          <motion.section
             className="dashboard-section"
             initial={{ opacity: 0, y: 100 }}
             animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 100 }}
-            transition={{ duration: 1.2, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1.2, delay: 1.1, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="container">
               <div className="dashboard-stats-ribbon">
@@ -354,6 +412,26 @@ function Home() {
                 </div>
               </div>
             </div>
+          </motion.section>
+
+          <motion.section
+            ref={subjectsSectionRef}
+            className={`gallery-section ${subjectScrollMode ? 'horizontal-mode' : ''}`}
+            initial={{ opacity: 0 }}
+            animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 1.5, delay: 1.6 }}
+          >
+            <div className="home-section-head">
+              <h3>Subject Archive</h3>
+              <span>Explore the work</span>
+            </div>
+            <SubjectGallery
+              subjects={sortedSubjects}
+              meta={subjectMeta}
+              horizontalOffset={subjectScrollOffset}
+              wrapperRef={galleryWrapperRef}
+              trackRef={galleryTrackRef}
+            />
           </motion.section>
         </main>
 

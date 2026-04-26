@@ -13,6 +13,8 @@
   visibility: hidden;
   transition: opacity 1s ease, visibility 1s ease;
   width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
 .main-layout.is-visible {
@@ -43,7 +45,7 @@
 }
 
 .dashboard-section {
-  padding-top: 100px;
+  padding-top: 220px;
   padding-bottom: 100px;
 }
 
@@ -111,9 +113,13 @@
 }
 
 .gallery-section {
-  padding-top: 180px; /* Space for fixed header */
+  padding-top: 100px;
   padding-bottom: 100px;
-  background: #000;
+  background: rgba(2, 6, 23, 0.4);
+}
+
+.gallery-section.horizontal-mode {
+  cursor: ew-resize;
 }
 
 .home-section-head {
@@ -145,7 +151,7 @@
 
 .portfolio-footer-nav {
   padding: 60px 0;
-  background: var(--bg-main, #020617);
+  background: rgba(2, 6, 23, 0.78);
   border-top: 1px solid var(--border, rgba(148,163,184,0.22));
 }
 
@@ -215,7 +221,7 @@
     font-size: clamp(1.8rem, 10vw, 3.5rem);
   }
   .dashboard-section {
-    padding-top: 150px;
+    padding-top: 170px;
   }
   .dashboard-stats-ribbon {
     gap: 16px;

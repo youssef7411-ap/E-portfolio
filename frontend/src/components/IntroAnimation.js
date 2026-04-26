@@ -134,9 +134,18 @@ void main() {
 }
 `;
 
-const IntroAnimation = ({ onComplete }) => {
+const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) => {
   const containerRef = useRef();
   const canvasRef = useRef();
+  const interactionRef = useRef();
+  const introOverlayRef = useRef();
+  const uniformRefs = useRef(null);
+  const hoverRef = useRef(false);
+  const canInteractRef = useRef(enableScrollInteraction);
+
+  useEffect(() => {
+    canInteractRef.current = enableScrollInteraction;
+  }, [enableScrollInteraction]);
 
   useEffect(() => {
     const scene = new THREE.Scene();
@@ -218,6 +227,7 @@ const IntroAnimation = ({ onComplete }) => {
     let animationId;
     let material;
     let atlasTexture;
+    let instancedMesh;
 
     loadTextureAtlas().then((res) => {
       atlasTexture = res.atlasTexture;
@@ -242,7 +252,7 @@ const IntroAnimation = ({ onComplete }) => {
         transparent: true,
       });
 
-      const instancedMesh = new THREE.InstancedMesh(geometry, material, meshCount);
+      instancedMesh = new THREE.InstancedMesh(geometry, material, meshCount);
       
       const textureCoords = new Float32Array(meshCount * 4);
       const indices = new Float32Array(meshCount);
@@ -263,32 +273,41 @@ const IntroAnimation = ({ onComplete }) => {
       geometry.setAttribute('aIndex', new THREE.InstancedBufferAttribute(indices, 1));
 
       scene.add(instancedMesh);
+      uniformRefs.current = material.uniforms;
 
       const anim = gsap.timeline({
         onComplete: () => {
-          gsap.to(containerRef.current, {
+          gsap.to(introOverlayRef.current, {
             opacity: 0,
-            duration: 1.5,
-            ease: "power2.inOut",
+            duration: 1.2,
+            ease: 'power2.inOut',
             onComplete: () => {
-              if (onComplete) onComplete();
-            }
+              if (onIntroComplete) onIntroComplete();
+            },
           });
-        }
+        },
       });
 
-      anim.fromTo(material.uniforms.uProgress, 
-        { value: 0 }, 
-        { value: 1, duration: 4, ease: "power2.inOut" }
+      anim.fromTo(
+        material.uniforms.uProgress,
+        { value: 0 },
+        { value: 1, duration: 4, ease: 'power2.inOut' }
       );
-      anim.fromTo(material.uniforms.uSplitProgress, 
-        { value: 0 }, 
-        { value: 1, duration: 1.2, ease: "power2.inOut" }, 
-        "-=0.8"
+      anim.fromTo(
+        material.uniforms.uSplitProgress,
+        { value: 0 },
+        { value: 1, duration: 1.2, ease: 'power2.inOut' },
+        '-=0.8'
       );
 
       const animate = (time) => {
         material.uniforms.uTime.value = time * 0.001;
+        material.uniforms.uSpeedY.value *= 0.85;
+        material.uniforms.uScrollY.value = THREE.MathUtils.lerp(
+          material.uniforms.uScrollY.value,
+          material.uniforms.uScrollY.value + material.uniforms.uSpeedY.value * 0.08,
+          0.2
+        );
         renderer.render(scene, camera);
         animationId = requestAnimationFrame(animate);
       };
@@ -300,10 +319,32 @@ const IntroAnimation = ({ onComplete }) => {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
+
+    const handleWheel = (event) => {
+      if (!canInteractRef.current || !hoverRef.current || !uniformRefs.current) return;
+      const scaledDelta = (event.deltaY * 2.4 * window.innerHeight) / Math.max(window.innerHeight, 1);
+      uniformRefs.current.uSpeedY.value += scaledDelta * 0.01;
+    };
+
+    const handleMouseEnter = () => {
+      hoverRef.current = true;
+    };
+
+    const handleMouseLeave = () => {
+      hoverRef.current = false;
+    };
+
+    const interactionEl = interactionRef.current;
     window.addEventListener('resize', handleResize);
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    interactionEl?.addEventListener('mouseenter', handleMouseEnter);
+    interactionEl?.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('wheel', handleWheel);
+      interactionEl?.removeEventListener('mouseenter', handleMouseEnter);
+      interactionEl?.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationId);
       renderer.dispose();
       geometry.dispose();
@@ -311,23 +352,36 @@ const IntroAnimation = ({ onComplete }) => {
       if (atlasTexture) atlasTexture.dispose();
       scene.clear();
     };
-  }, [onComplete]);
+  }, [onIntroComplete]);
 
   return (
-    <div 
-      ref={containerRef} 
-      style={{ 
+    <div
+      ref={containerRef}
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100vw',
         height: '100vh',
-        zIndex: 9999,
+        zIndex: 0,
         background: '#020617',
-        pointerEvents: 'none'
       }}
     >
-      <canvas ref={canvasRef} style={{ display: 'block' }} />
+      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
+      <div
+        ref={interactionRef}
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'auto' }}
+      />
+      <div
+        ref={introOverlayRef}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: '#020617',
+          opacity: 1,
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   );
 };
