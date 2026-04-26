@@ -299,150 +299,140 @@ function Home() {
     <div className="home">
       <AnimatePresence>
         {!introFinished && (
-          <IntroAnimation onComplete={() => setIntroFinished(true)} />
+          <IntroAnimation key="intro" onComplete={() => setIntroFinished(true)} />
         )}
       </AnimatePresence>
 
-      <motion.section
-        className="home-hero"
-      >
-        <div className="container">
-          <div className="hero-content">
-            <motion.h1 
-              className="hero-headline"
-              initial={{ opacity: 0, y: -50 }}
-              animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
-              transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            >
-              Youssef’s Portfolio
-            </motion.h1>
-            
-            <motion.div 
-              className="hero-actions"
-              initial={{ opacity: 0 }}
-              animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-            >
-              <div className="explore-cta-controls">
-                <select
-                  id="subject-explore-select"
-                  className="explore-subject-select"
-                  value={selectedSubjectId}
-                  onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  aria-label="Select subject to explore"
-                >
-                  {sortedSubjects.map((subject) => (
-                    <option key={subject._id} value={subject._id}>
-                      {subject.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="explore-cta-btn"
-                  onClick={handleExploreSubject}
-                  disabled={!selectedSubjectId}
-                >
-                  Explore Subject
-                </button>
-                <button 
-                  className="explore-cta-btn secondary" 
-                  onClick={() => navigate('/admin/login')}
-                >
-                  Admin
-                </button>
-              </div>
-            </motion.div>
+      <div className={`main-layout ${introFinished ? 'is-visible' : 'is-hidden'}`}>
+        <motion.header 
+          className="portfolio-header"
+          initial={{ opacity: 0, y: -50 }}
+          animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
+          transition={{ duration: 1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="container">
+            <h1 className="hero-headline">Youssef’s Portfolio</h1>
           </div>
+        </motion.header>
 
-          <motion.div 
-            className="dashboard-shell"
-            initial={{ opacity: 0, y: 50 }}
-            animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-            transition={{ duration: 1.2, delay: 1, ease: [0.22, 1, 0.36, 1] }}
+        <main>
+          <motion.section 
+            className="gallery-section"
+            initial={{ opacity: 0 }}
+            animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 1.5, delay: 1 }}
           >
-            <div className="dashboard-stats-ribbon">
-              <div className="stat-card">
-                <span className="stat-label">Total Subjects</span>
-                <span className="stat-value">{subjects.length}</span>
-              </div>
-              <div className="stat-divider" />
-              <div className="stat-card">
-                <span className="stat-label">Total Uploads</span>
-                <span className="stat-value">{posts.length}</span>
-              </div>
-              <div className="stat-divider" />
-              <div className="stat-card">
-                <span className="stat-label">Latest Activity</span>
-                <span className="stat-value">
-                  {posts.length > 0 
-                    ? new Date(Math.max(...posts.map(p => getPostTimestamp(p)))).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                    : 'No activity yet'}
-                </span>
-              </div>
-            </div>
-
-            <div className="dashboard-chart-grid">
-              <article className="dashboard-chart-card">
-                <div className="dashboard-chart-head">
-                  <h3>Total Uploads Per Subject</h3>
-                </div>
-                <div className="dashboard-chart-body">
-                  <Bar data={uploadsBySubjectData} options={barOptions} />
-                </div>
-              </article>
-
-              <article className="dashboard-chart-card">
-                <div className="dashboard-chart-head">
-                  <h3>Data Type Distribution</h3>
-                </div>
-                <div className="dashboard-chart-body">
-                  <Doughnut data={distributionData} options={donutOptions} />
-                </div>
-              </article>
-
-              <article className="dashboard-chart-card">
-                <div className="dashboard-chart-head">
-                  <h3>Activity Frequency</h3>
-                </div>
-                <div className="dashboard-chart-body">
-                  <Line data={activityData} options={lineOptions} />
-                </div>
-              </article>
-            </div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      <motion.main 
-        className="home-main"
-        initial={{ opacity: 0, y: 30 }}
-        animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-        transition={{ duration: 1.2, delay: 1.8, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="container-full">
-          <section className="home-panel-gallery">
             <div className="home-section-head">
-              <h3>Explore Subjects</h3>
-              <span>{sortedSubjects.length} subjects</span>
+              <h3>Subject Archive</h3>
+              <span>Explore the work</span>
             </div>
+            <SubjectGallery subjects={sortedSubjects} meta={subjectMeta} />
+          </motion.section>
 
-            {loading ? (
-              <div className="section-loading">
-                <div className="skeleton-gallery">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="skeleton-gallery-item" />
-                  ))}
+          <motion.section 
+            className="dashboard-section"
+            initial={{ opacity: 0, y: 100 }}
+            animate={introFinished ? { opacity: 1, y: 0 } : { opacity: 0, y: 100 }}
+            transition={{ duration: 1.2, delay: 1.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="container">
+              <div className="dashboard-stats-ribbon">
+                <div className="stat-card">
+                  <span className="stat-label">Total Subjects</span>
+                  <span className="stat-value">{subjects.length}</span>
+                </div>
+                <div className="stat-divider" />
+                <div className="stat-card">
+                  <span className="stat-label">Total Uploads</span>
+                  <span className="stat-value">{posts.length}</span>
+                </div>
+                <div className="stat-divider" />
+                <div className="stat-card">
+                  <span className="stat-label">Last Update</span>
+                  <span className="stat-value">
+                    {posts.length > 0 
+                      ? new Date(getPostTimestamp(posts[0])).toLocaleDateString() 
+                      : 'N/A'}
+                  </span>
                 </div>
               </div>
-            ) : (
-              <SubjectGallery subjects={sortedSubjects} meta={subjectMeta} />
-            )}
-          </section>
-        </div>
-      </motion.main>
+
+              <div className="dashboard-chart-grid">
+                <div className="dashboard-chart-card">
+                  <div className="dashboard-chart-head">
+                    <h3>Upload Distribution</h3>
+                  </div>
+                  <div className="dashboard-chart-body">
+                    <Bar data={uploadsBySubjectData} options={baseChartOptions} />
+                  </div>
+                </div>
+
+                <div className="dashboard-chart-card">
+                  <div className="dashboard-chart-head">
+                    <h3>Content Breakdown</h3>
+                  </div>
+                  <div className="dashboard-chart-body">
+                    <Doughnut 
+                      data={distributionData} 
+                      options={{
+                        ...baseChartOptions,
+                        scales: undefined,
+                        cutout: '70%',
+                      }} 
+                    />
+                  </div>
+                </div>
+
+                <div className="dashboard-chart-card wide">
+                  <div className="dashboard-chart-head">
+                    <h3>Recent Activity</h3>
+                  </div>
+                  <div className="dashboard-chart-body">
+                    <Line data={activityData} options={baseChartOptions} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        </main>
+
+        <motion.footer 
+          className="portfolio-footer-nav"
+          initial={{ opacity: 0 }}
+          animate={introFinished ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 1, delay: 2 }}
+        >
+          <div className="container">
+            <div className="footer-actions">
+              <select 
+                className="explore-subject-select"
+                value={selectedSubjectId}
+                onChange={(e) => setSelectedSubjectId(e.target.value)}
+              >
+                <option value="" disabled>Select a Subject</option>
+                {sortedSubjects.map(s => (
+                  <option key={s._id} value={s._id}>{s.name}</option>
+                ))}
+              </select>
+              <button 
+                className="explore-cta-btn"
+                onClick={() => selectedSubjectId && navigate(`/subject/${selectedSubjectId}`)}
+              >
+                View Subject Details
+              </button>
+              <button 
+                className="explore-cta-btn secondary"
+                onClick={() => navigate('/all-posts')}
+              >
+                Browse All Posts
+              </button>
+            </div>
+          </div>
+        </motion.footer>
+      </div>
     </div>
   );
+
 }
 
 export default Home;

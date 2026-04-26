@@ -1,11 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useNavigate } from 'react-router-dom';
 import '../styles/SubjectGallery.css';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const vertexShader = `
 precision highp float;
@@ -49,9 +46,10 @@ void main() {
 
 const SubjectGallery = ({ subjects, meta }) => {
   const containerRef = useRef();
-  const galleryRef = useRef();
+  const wrapperRef = useRef();
   const canvasRef = useRef();
   const navigate = useNavigate();
+  const scrollRef = useRef({ current: 0, target: 0, limit: 0 });
 
   useEffect(() => {
     if (!subjects.length || !containerRef.current) return;
@@ -66,11 +64,6 @@ const SubjectGallery = ({ subjects, meta }) => {
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
 
     camera.position.z = 5;
 
@@ -99,95 +92,135 @@ const SubjectGallery = ({ subjects, meta }) => {
         });
 
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.userData.index = index;
+        
+        // Load actual subject image
+        const subject = subjects[index];
+        if (subject && subject.image) {
+          textureLoader.load(subject.image, (tex) => {
+            material.uniforms.uTexture.value = tex;
+            material.uniforms.uImageResolution.value.set(tex.image.width, tex.image.height);
+          });
+        }
+
         scene.add(mesh);
-
-        const texture = textureLoader.load(img.src, (tex) => {
-          material.uniforms.uTexture.value = tex;
-          material.uniforms.uImageResolution.value.set(tex.image.width, tex.image.height);
-        });
-
-        meshes.push({
-          mesh,
-          element: img,
-          material,
-          index
-        });
-      });
-    };
-
-    // GSAP Horizontal Scroll
-    const sections = gsap.utils.toArray('.gallery-item');
-    const totalWidth = sections.length * 85; // 85vw per item
-
-    const scrollTween = gsap.to(sections, {
-      xPercent: -100 * (sections.length - 1),
-      ease: "none",
-      scrollTrigger: {
-        trigger: galleryRef.current,
-        pin: true,
-        scrub: 1,
-        snap: 1 / (sections.length - 1),
-        end: () => `+=${galleryRef.current.offsetWidth * sections.length * 0.5}`,
-        invalidateOnRefresh: true
-      }
-    });
-
-    // Update Mesh Positions
-    const updateMeshes = () => {
-      meshes.forEach(({ mesh, element, material }) => {
-        const bounds = element.getBoundingClientRect();
-        
-        // Convert screen coordinates to Three.js coordinates
-        const x = (bounds.left + bounds.width / 2 - viewport.width / 2) * (5 / (viewport.height / 2 * Math.tan(THREE.MathUtils.degToRad(22.5))));
-        const y = -(bounds.top + bounds.height / 2 - viewport.height / 2) * (5 / (viewport.height / 2 * Math.tan(THREE.MathUtils.degToRad(22.5))));
-        
-        mesh.position.set(x, y, 0);
-        mesh.scale.set(
-            bounds.width * (5 / (viewport.height / 2 * Math.tan(THREE.MathUtils.degToRad(22.5)))), 
-            bounds.height * (5 / (viewport.height / 2 * Math.tan(THREE.MathUtils.degToRad(22.5)))), 
-            1
-        );
-
-        // Parallax effect based on horizontal position
-        const centerX = bounds.left + bounds.width / 2;
-        const distFromCenter = (centerX - viewport.width / 2) / viewport.width;
-        material.uniforms.uParallax.value = distFromCenter * 0.4;
+        meshes.push(mesh);
       });
     };
 
     createGalleryMeshes();
 
-    gsap.ticker.add(() => {
-      updateMeshes();
-      renderer.render(scene, camera);
-    });
+    const updateMeshPositions = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const viewportCenter = vw * 0.5;
 
-    const handleResize = () => {
-      viewport.width = window.innerWidth;
-      viewport.height = window.innerHeight;
-      camera.aspect = viewport.width / viewport.height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(viewport.width, viewport.height);
+      meshes.forEach((mesh) => {
+        const item = containerRef.current.querySelectorAll('.gallery-item')[mesh.userData.index];
+        const img = item.querySelector('.gallery-img-source');
+        const bounds = img.getBoundingClientRect();
+        
+        // Convert screen coordinates to Three.js coordinates
+        const x = (bounds.left + bounds.width / 2) - vw / 2;
+        const y = -(bounds.top + bounds.height / 2) + vh / 2;
+        
+        // Perspective adjustment
+        const fov = camera.fov * (Math.PI / 180);
+        const height = 2 * Math.tan(fov / 2) * camera.position.z;
+        const width = height * camera.aspect;
+        
+        mesh.position.x = (x / vw) * width;
+        mesh.position.y = (y / vh) * height;
+        mesh.scale.set((bounds.width / vw) * width, (bounds.height / vh) * height, 1);
+
+        // Enhanced Parallax logic
+        const elementCenter = bounds.left + bounds.width * 0.5;
+        const distance = (elementCenter - viewportCenter) / vw;
+        mesh.material.uniforms.uParallax.value = distance * 0.35;
+      });
     };
 
+    const onWheel = (e) => {
+      scrollRef.current.target = Math.max(0, Math.min(scrollRef.current.limit, scrollRef.current.target + e.deltaY));
+    };
+
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      if (containerRef.current && wrapperRef.current) {
+        const containerWidth = containerRef.current.scrollWidth;
+        const wrapperWidth = wrapperRef.current.clientWidth;
+        scrollRef.current.limit = Math.max(0, containerWidth - wrapperWidth);
+      }
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: true });
     window.addEventListener('resize', handleResize);
+    
+    // Initial limit set after layout
+    setTimeout(handleResize, 500);
+
+    let animationId;
+    const animate = () => {
+      // Smooth scroll lerping
+      scrollRef.current.current = THREE.MathUtils.lerp(
+        scrollRef.current.current, 
+        scrollRef.current.target, 
+        0.07
+      );
+
+      // Update DOM transform directly for performance
+      if (containerRef.current) {
+        containerRef.current.style.transform = `translateX(${-scrollRef.current.current}px)`;
+      }
+
+      updateMeshPositions();
+      renderer.render(scene, camera);
+      animationId = requestAnimationFrame(animate);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          if (!animationId) animate();
+        } else {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (wrapperRef.current) observer.observe(wrapperRef.current);
 
     return () => {
+      if (wrapperRef.current) observer.unobserve(wrapperRef.current);
+      window.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', handleResize);
-      scrollTween.kill();
-      gsap.ticker.remove(updateMeshes);
-      renderer.dispose();
-      meshes.forEach(m => {
-        m.geometry?.dispose();
-        m.material?.dispose();
+      if (animationId) cancelAnimationFrame(animationId);
+      
+      // Proper cleanup
+      meshes.forEach(mesh => {
+        mesh.geometry.dispose();
+        if (mesh.material.uniforms.uTexture.value) {
+          mesh.material.uniforms.uTexture.value.dispose();
+        }
+        mesh.material.dispose();
       });
+      
+      renderer.dispose();
+      scene.clear();
     };
   }, [subjects]);
 
   return (
-    <div className="gallery-wrapper" ref={containerRef}>
+    <div className="gallery-wrapper" ref={wrapperRef}>
       <canvas className="gallery-canvas" ref={canvasRef} />
-      <div className="gallery-horizontal" ref={galleryRef}>
+      <div className="gallery-horizontal" ref={containerRef}>
         {subjects.map((subject, index) => (
           <div 
             key={subject._id} 
@@ -196,17 +229,17 @@ const SubjectGallery = ({ subjects, meta }) => {
           >
             <div className="gallery-image-container">
               <img 
-                src={subject.image || '/placeholder.webp'} 
+                src={subject.image} 
                 alt={subject.name} 
                 className="gallery-img-source"
-                style={{ opacity: 0 }} // Hidden because Three.js renders it
+                style={{ opacity: 0 }} // Hide actual image, WebGL will render it
               />
               <div className="gallery-overlay">
-                <span className="gallery-index">0{index + 1}</span>
-                <h2 className="gallery-title">{subject.name}</h2>
+                <span className="gallery-index">{(index + 1).toString().padStart(2, '0')}</span>
+                <h4 className="gallery-title">{subject.name}</h4>
+                <p className="gallery-desc">{subject.description?.substring(0, 100)}...</p>
                 <div className="gallery-meta">
-                  <span>{meta.get(String(subject._id))?.postCount || 0} Posts</span>
-                  <span className="gallery-explore">Explore →</span>
+                  <span>{meta.get(String(subject._id))?.postCount || 0} Uploads</span>
                 </div>
               </div>
             </div>

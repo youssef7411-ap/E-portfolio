@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
@@ -17,10 +17,12 @@ uniform float uTime;
 uniform float uProgress;
 uniform float uSplitProgress;
 uniform float uPageSpacing;
+uniform float uScrollY;
+uniform float uSpeedY;
 
 varying vec4 vTextureCoords;
 varying float vIndex;
-varying vec3 vPosition;
+varying float vRotationProgress;
 
 mat3 getYrotationMatrix(float angle) {
     return mat3(
@@ -30,15 +32,23 @@ mat3 getYrotationMatrix(float angle) {
     );
 }
 
+mat3 getXrotationMatrix(float angle) {
+    return mat3(
+        1.0, 0.0, 0.0,
+        0.0, cos(angle), -sin(angle),
+        0.0, sin(angle), cos(angle)
+    );
+}
+
 float remap(float value, float originMin, float originMax) {
     return clamp((value - originMin) / (originMax - originMin), 0.0, 1.0);
 }
 
+float getXwave(float x) {
+    return sin(x * 2.0) * 0.4;
+}
+
 void main() {
-    vUv = uv;
-    vIndex = aIndex;
-    vTextureCoords = aTextureCoords;
-    
     float PI = 3.14159265359;
     vec3 rotationCenter = vec3(-uPageWidth * 0.5, 0.0, 0.0);
     vec3 translatedPosition = position - rotationCenter;
@@ -64,181 +74,226 @@ void main() {
     float stackingPages = (uMeshCount - aIndex) * uPageThickness * smoothstep(0.8, 1.0, stackingAngle);
     translatedPosition.z += stackingPages * (1.0 - uSplitProgress);
     yAngle -= pageCrumpleAngle * uSplitProgress;
+    yAngle -= uSplitProgress * PI * 0.4;
+    
+    translatedPosition.z += uSplitProgress * uPageSpacing * (-(aIndex - (uMeshCount - 1.0) * 0.5));
 
-    mat3 rotationMatrix = getYrotationMatrix(yAngle);
-    vec3 rotatedPosition = rotationMatrix * translatedPosition;
-    vec3 finalPosition = rotatedPosition + rotationCenter;
+    float boxCenterZ = uPageSpacing * (-(aIndex - (uMeshCount - 1.0) * 0.5));
+    float maxZ = uMeshCount * (uPageSpacing + uPageThickness) * 0.5;
+    float centerZProgress = boxCenterZ - uScrollY;
+    float wrappedCenterZ = mod(centerZProgress + maxZ, 2.0 * maxZ) - maxZ - getXwave((position.y + uPageHeight * 0.5) / uPageHeight) * clamp(uSpeedY * 2.0, -2.0, 2.0);
+    
+    float zOffset = wrappedCenterZ - boxCenterZ;
+    translatedPosition.z += zOffset;
+    
+    vec3 rotatedPosition = getYrotationMatrix(yAngle) * translatedPosition;
+    rotatedPosition.z -= uSplitProgress;
 
-    // Zoom out effect at the end
-    finalPosition.z += uSplitProgress * 15.0;
-    finalPosition.x += uSplitProgress * (aIndex - uMeshCount * 0.5) * 5.0;
+    float initialRotationProgress = remap(uProgress, 0.0, 0.15);
+    rotatedPosition += rotationCenter;
+    rotatedPosition.x += initialRotationProgress * uPageWidth * 0.5;
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(finalPosition, 1.0);
-    vPosition = finalPosition;
+    float xAngle = -PI * 0.2 * initialRotationProgress;
+    xAngle += uSplitProgress * PI * 0.2;
+
+    vec3 newPosition = getXrotationMatrix(xAngle) * rotatedPosition;
+    vec4 modelPosition = modelMatrix * instanceMatrix * vec4(newPosition, 1.0);
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    vUv = uv;
+    vTextureCoords = aTextureCoords;
+    vIndex = aIndex;
+    vRotationProgress = localRotAccelerationProgress;
 }
 `;
 
 const fragmentShader = `
 varying vec2 vUv;
 varying vec4 vTextureCoords;
-varying float vIndex;
-varying vec3 vPosition;
-
 uniform sampler2D uAtlas;
-uniform float uTime;
-uniform float uOpacity;
+varying float vIndex;
+varying float vRotationProgress;
 
 void main() {
-    vec2 atlasUv = vec2(
-        mix(vTextureCoords.x, vTextureCoords.y, vUv.x),
-        mix(vTextureCoords.z, vTextureCoords.w, vUv.y)
+    float xStart = vTextureCoords.x;
+    float xEnd = vTextureCoords.y;
+    float yStart = vTextureCoords.z;
+    float yEnd = vTextureCoords.w;
+
+    vec2 atlasUV = vec2(
+        mix(xStart, xEnd, vUv.x),
+        mix(yStart, yEnd, 1.0 - vUv.y)
     );
+
+    if(vRotationProgress == 0.0 && vIndex != 0.0) {
+        discard;
+    }
     
-    vec4 color = texture2D(uAtlas, atlasUv);
-    
-    // Add some shading based on position and normal (fake)
-    float shading = mix(0.7, 1.0, vUv.x);
-    color.rgb *= shading;
-    
-    gl_FragColor = vec4(color.rgb, uOpacity);
+    gl_FragColor = texture2D(uAtlas, atlasUV);
 }
 `;
 
 const IntroAnimation = ({ onComplete }) => {
   const containerRef = useRef();
-  const [isVisible, setIsVisible] = useState(true);
+  const canvasRef = useRef();
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 6;
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasRef.current,
+      alpha: true,
+      antialias: true,
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    containerRef.current.appendChild(renderer.domElement);
 
-    camera.position.z = 5;
+    const meshCount = 30;
+    const pageDimensions = { width: 2, height: 3 };
+    const pageThickness = 0.01;
+    const pageSpacing = 1;
 
-    const meshCount = 13;
-    const pageWidth = 2.5;
-    const pageHeight = 3.5;
-    const pageThickness = 0.02;
-
-    const geometry = new THREE.BoxGeometry(pageWidth, pageHeight, pageThickness, 32, 32, 1);
-    
-    const aIndex = new Float32Array(meshCount);
-    const aTextureCoords = new Float32Array(meshCount * 4);
+    const geometry = new THREE.BoxGeometry(
+      pageDimensions.width,
+      pageDimensions.height,
+      pageThickness,
+      50,
+      50,
+      1
+    );
 
     const imagePaths = Array.from({ length: 13 }, (_, i) => `/intro-images/p${i + 1}.jpg`);
     
-    const loadAtlas = async () => {
-      const images = await Promise.all(imagePaths.map(path => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.src = path;
-        });
-      }));
+    const loadTextureAtlas = async () => {
+      const images = await Promise.all(
+        imagePaths.map((path) => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = path;
+          });
+        })
+      );
 
-      const atlasWidth = Math.max(...images.map(img => img.width));
-      const totalHeight = images.reduce((sum, img) => sum + img.height, 0);
+      const validImages = images.filter(img => img !== null);
+      
+      const atlasWidth = Math.max(...validImages.map((img) => img.width));
+      let totalHeight = 0;
+      validImages.forEach((img) => {
+        totalHeight += img.height;
+      });
 
       const canvas = document.createElement('canvas');
       canvas.width = atlasWidth;
       canvas.height = totalHeight;
       const ctx = canvas.getContext('2d');
 
+      const imageInfos = [];
       let currentY = 0;
-      images.forEach((img, i) => {
+
+      validImages.forEach((img) => {
         ctx.drawImage(img, 0, currentY);
-        const xStart = 0;
-        const xEnd = img.width / atlasWidth;
-        const yStart = 1 - currentY / totalHeight;
-        const yEnd = 1 - (currentY + img.height) / totalHeight;
         
-        aTextureCoords[i * 4 + 0] = xStart;
-        aTextureCoords[i * 4 + 1] = xEnd;
-        aTextureCoords[i * 4 + 2] = yStart;
-        aTextureCoords[i * 4 + 3] = yEnd;
-        
+        imageInfos.push({
+          uvs: {
+            xStart: 0,
+            xEnd: img.width / atlasWidth,
+            yStart: 1 - currentY / totalHeight,
+            yEnd: 1 - (currentY + img.height) / totalHeight,
+          }
+        });
+
         currentY += img.height;
       });
 
-      const atlasTexture = new THREE.Texture(canvas);
+      const atlasTexture = new THREE.CanvasTexture(canvas);
       atlasTexture.needsUpdate = true;
+      return { atlasTexture, imageInfos };
+    };
 
-      for (let i = 0; i < meshCount; i++) aIndex[i] = i;
+    let animationId;
+    let material;
+    let atlasTexture;
 
-      const instancedMesh = new THREE.InstancedMesh(geometry, null, meshCount);
-      const material = new THREE.ShaderMaterial({
+    loadTextureAtlas().then((res) => {
+      atlasTexture = res.atlasTexture;
+      const imageInfos = res.imageInfos;
+
+      material = new THREE.ShaderMaterial({
         vertexShader,
         fragmentShader,
         uniforms: {
           uAtlas: { value: atlasTexture },
           uProgress: { value: 0 },
           uSplitProgress: { value: 0 },
-          uMeshCount: { value: meshCount },
-          uPageWidth: { value: pageWidth },
-          uPageHeight: { value: pageHeight },
+          uPageWidth: { value: pageDimensions.width },
+          uPageHeight: { value: pageDimensions.height },
           uPageThickness: { value: pageThickness },
+          uPageSpacing: { value: pageSpacing },
+          uMeshCount: { value: meshCount },
+          uScrollY: { value: 0 },
+          uSpeedY: { value: 0 },
           uTime: { value: 0 },
-          uOpacity: { value: 1 }
         },
         transparent: true,
-        side: THREE.DoubleSide
       });
 
-      instancedMesh.material = material;
+      const instancedMesh = new THREE.InstancedMesh(geometry, material, meshCount);
       
-      // Set initial matrices
-      const dummy = new THREE.Object3D();
-      for (let i = 0; i < meshCount; i++) {
-        dummy.position.set(0, 0, 0);
-        dummy.updateMatrix();
-        instancedMesh.setMatrix(i, dummy.matrix);
-      }
+      const textureCoords = new Float32Array(meshCount * 4);
+      const indices = new Float32Array(meshCount);
 
-      // Add attributes for indexing and texture coords
-      geometry.setAttribute('aIndex', new THREE.InstancedBufferAttribute(aIndex, 1));
-      geometry.setAttribute('aTextureCoords', new THREE.InstancedBufferAttribute(aTextureCoords, 4));
+      for (let i = 0; i < meshCount; i++) {
+        const info = imageInfos[i % imageInfos.length];
+        textureCoords[i * 4 + 0] = info.uvs.xStart;
+        textureCoords[i * 4 + 1] = info.uvs.xEnd;
+        textureCoords[i * 4 + 2] = info.uvs.yStart;
+        textureCoords[i * 4 + 3] = info.uvs.yEnd;
+        indices[i] = i;
+
+        const matrix = new THREE.Matrix4();
+        instancedMesh.setMatrixAt(i, matrix);
+      }
+      
+      geometry.setAttribute('aTextureCoords', new THREE.InstancedBufferAttribute(textureCoords, 4));
+      geometry.setAttribute('aIndex', new THREE.InstancedBufferAttribute(indices, 1));
 
       scene.add(instancedMesh);
 
-      const tl = gsap.timeline({
+      const anim = gsap.timeline({
         onComplete: () => {
-          gsap.to(material.uniforms.uOpacity, {
-            value: 0,
-            duration: 1,
+          gsap.to(containerRef.current, {
+            opacity: 0,
+            duration: 1.5,
+            ease: "power2.inOut",
             onComplete: () => {
-              setIsVisible(false);
               if (onComplete) onComplete();
             }
           });
         }
       });
 
-      tl.to(material.uniforms.uProgress, {
-        value: 1,
-        duration: 4,
-        ease: "power2.inOut"
-      });
-
-      tl.to(material.uniforms.uSplitProgress, {
-        value: 1,
-        duration: 1.5,
-        ease: "power2.inOut"
-      }, "-=0.5");
+      anim.fromTo(material.uniforms.uProgress, 
+        { value: 0 }, 
+        { value: 1, duration: 4, ease: "power2.inOut" }
+      );
+      anim.fromTo(material.uniforms.uSplitProgress, 
+        { value: 0 }, 
+        { value: 1, duration: 1.2, ease: "power2.inOut" }, 
+        "-=0.8"
+      );
 
       const animate = (time) => {
         material.uniforms.uTime.value = time * 0.001;
         renderer.render(scene, camera);
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
       };
       animate(0);
-    };
-
-    loadAtlas();
+    });
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -249,19 +304,19 @@ const IntroAnimation = ({ onComplete }) => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
       renderer.dispose();
-      if (containerRef.current) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
+      geometry.dispose();
+      if (material) material.dispose();
+      if (atlasTexture) atlasTexture.dispose();
+      scene.clear();
     };
-  }, []);
-
-  if (!isVisible) return null;
+  }, [onComplete]);
 
   return (
     <div 
       ref={containerRef} 
-      style={{
+      style={{ 
         position: 'fixed',
         top: 0,
         left: 0,
@@ -271,7 +326,9 @@ const IntroAnimation = ({ onComplete }) => {
         background: '#020617',
         pointerEvents: 'none'
       }}
-    />
+    >
+      <canvas ref={canvasRef} style={{ display: 'block' }} />
+    </div>
   );
 };
 
