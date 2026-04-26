@@ -156,9 +156,10 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       canvas: canvasRef.current,
       alpha: true,
       antialias: true,
+      powerPreference: 'high-performance',
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
     const meshCount = 30;
     const pageDimensions = { width: 2, height: 3 };
@@ -169,8 +170,8 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       pageDimensions.width,
       pageDimensions.height,
       pageThickness,
-      50,
-      50,
+      24,
+      24,
       1
     );
 
@@ -189,6 +190,19 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       );
 
       const validImages = images.filter(img => img !== null);
+      if (!validImages.length) {
+        const fallbackTexture = new THREE.DataTexture(
+          new Uint8Array([2, 6, 23, 255]),
+          1,
+          1,
+          THREE.RGBAFormat
+        );
+        fallbackTexture.needsUpdate = true;
+        return {
+          atlasTexture: fallbackTexture,
+          imageInfos: [{ uvs: { xStart: 0, xEnd: 1, yStart: 1, yEnd: 0 } }],
+        };
+      }
       
       const atlasWidth = Math.max(...validImages.map((img) => img.width));
       let totalHeight = 0;
@@ -224,12 +238,19 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       return { atlasTexture, imageInfos };
     };
 
-    let animationId;
+    let animationId = 0;
     let material;
     let atlasTexture;
     let instancedMesh;
+    let isDisposed = false;
+    const resizeRaf = { id: 0 };
+    const introTimeline = { current: null };
 
     loadTextureAtlas().then((res) => {
+      if (isDisposed) {
+        res.atlasTexture.dispose();
+        return;
+      }
       atlasTexture = res.atlasTexture;
       const imageInfos = res.imageInfos;
 
@@ -277,16 +298,19 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
 
       const anim = gsap.timeline({
         onComplete: () => {
+          if (isDisposed) return;
           gsap.to(introOverlayRef.current, {
             opacity: 0,
             duration: 1.2,
             ease: 'power2.inOut',
             onComplete: () => {
+              if (isDisposed) return;
               if (onIntroComplete) onIntroComplete();
             },
           });
         },
       });
+      introTimeline.current = anim;
 
       anim.fromTo(
         material.uniforms.uProgress,
@@ -301,6 +325,7 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
       );
 
       const animate = (time) => {
+        if (isDisposed) return;
         material.uniforms.uTime.value = time * 0.001;
         material.uniforms.uSpeedY.value *= 0.85;
         material.uniforms.uScrollY.value = THREE.MathUtils.lerp(
@@ -315,9 +340,13 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
     });
 
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (resizeRaf.id) return;
+      resizeRaf.id = window.requestAnimationFrame(() => {
+        resizeRaf.id = 0;
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
     };
 
     const handleWheel = (event) => {
@@ -341,10 +370,13 @@ const IntroAnimation = ({ onIntroComplete, enableScrollInteraction = false }) =>
     interactionEl?.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
+      isDisposed = true;
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('wheel', handleWheel);
       interactionEl?.removeEventListener('mouseenter', handleMouseEnter);
       interactionEl?.removeEventListener('mouseleave', handleMouseLeave);
+      if (resizeRaf.id) window.cancelAnimationFrame(resizeRaf.id);
+      if (introTimeline.current) introTimeline.current.kill();
       cancelAnimationFrame(animationId);
       renderer.dispose();
       geometry.dispose();

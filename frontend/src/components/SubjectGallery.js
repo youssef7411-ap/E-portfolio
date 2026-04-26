@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/SubjectGallery.css';
 
@@ -23,6 +23,8 @@ const SubjectGallery = ({ subjects, meta, horizontalOffset = 0, wrapperRef, trac
                 src={subject.image}
                 alt={subject.name}
                 className="gallery-img-source"
+                loading="lazy"
+                decoding="async"
               />
               <div className="gallery-overlay">
                 <span className="gallery-index">{(index + 1).toString().padStart(2, '0')}</span>
@@ -39,4 +41,4 @@ const SubjectGallery = ({ subjects, meta, horizontalOffset = 0, wrapperRef, trac
   );
 };
 
-export default SubjectGallery;
+export default memo(SubjectGallery);
