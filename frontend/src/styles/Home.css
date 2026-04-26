@@ -146,58 +146,6 @@
   color: var(--text-muted, #94a3b8);
 }
 
-.portfolio-footer-nav {
-  padding: 60px 0;
-  background: rgba(2, 6, 23, 0.78);
-  border-top: 1px solid var(--border, rgba(148,163,184,0.22));
-}
-
-.footer-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.explore-subject-select {
-  height: 48px;
-  background: transparent;
-  border: 1px solid var(--border, rgba(148,163,184,0.22));
-  color: var(--text-main, #f8fafc);
-  padding: 0 40px 0 16px;
-  font-family: var(--font-family-mono);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  min-width: 220px;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: calc(100% - 16px) center;
-  transition: border-color 0.3s ease;
-}
-
-.explore-subject-select:hover {
-  border-color: var(--text-main, #f8fafc);
-}
-
-.explore-cta-btn {
-  height: 48px;
-  padding: 0 32px;
-  background: var(--text-main, #f8fafc);
-  border: 1px solid var(--text-main, #f8fafc);
-  color: var(--bg-main, #020617);
-  font-family: var(--font-family-mono);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
 .explore-cta-btn:hover {
   background: transparent;
   color: var(--text-main, #f8fafc);

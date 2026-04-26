@@ -16,6 +16,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import SubjectGallery from '../components/SubjectGallery';
+import MagazineIntro from '../components/MagazineIntro';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
 
@@ -50,7 +51,7 @@ const getPostTimestamp = (post) => {
 function Home() {
   const dispatch = useDispatch();
   const { subjects, posts } = useSelector((state) => state.portfolio);
-  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [showIntro, setShowIntro] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -80,19 +81,6 @@ function Home() {
       return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' });
     })
   ), [subjects]);
-
-  useEffect(() => {
-    if (!sortedSubjects.length) {
-      setSelectedSubjectId('');
-      return;
-    }
-    setSelectedSubjectId((prev) => {
-      if (prev && sortedSubjects.some((subject) => String(subject._id) === String(prev))) {
-        return prev;
-      }
-      return String(sortedSubjects[0]._id);
-    });
-  }, [sortedSubjects]);
 
   const chartPalette = useMemo(() => {
     if (typeof window === 'undefined') {
@@ -256,11 +244,18 @@ function Home() {
 
   return (
     <div className="home">
-      <div className="main-layout is-visible">
+      {showIntro && <MagazineIntro onComplete={() => setShowIntro(false)} />}
+      
+      <motion.div 
+        className="main-layout is-visible"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showIntro ? 0 : 1 }}
+        transition={{ duration: 1 }}
+      >
         <motion.header 
           className="portfolio-header"
           initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: showIntro ? 0 : 1, y: showIntro ? -50 : 0 }}
           transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="container">
@@ -272,7 +267,7 @@ function Home() {
           <motion.section
             className="dashboard-section"
             initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: showIntro ? 0 : 1, y: showIntro ? 100 : 0 }}
             transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="container">
@@ -338,7 +333,7 @@ function Home() {
           <motion.section 
             className="gallery-section-container"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: showIntro ? 0 : 1 }}
             transition={{ duration: 1.5, delay: 0.6 }}
           >
             <SubjectGallery
@@ -347,44 +342,9 @@ function Home() {
             />
           </motion.section>
         </main>
-
-        <motion.footer 
-          className="portfolio-footer-nav"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.8 }}
-        >
-          <div className="container">
-            <div className="footer-actions">
-              <select 
-                className="explore-subject-select"
-                value={selectedSubjectId}
-                onChange={(e) => setSelectedSubjectId(e.target.value)}
-              >
-                <option value="" disabled>Select a Subject</option>
-                {sortedSubjects.map(s => (
-                  <option key={s._id} value={s._id}>{s.name}</option>
-                ))}
-              </select>
-              <button 
-                className="explore-cta-btn"
-                onClick={() => selectedSubjectId && navigate(`/subject/${selectedSubjectId}`)}
-              >
-                View Subject Details
-              </button>
-              <button 
-                className="explore-cta-btn secondary"
-                onClick={() => navigate('/all-posts')}
-              >
-                Browse All Posts
-              </button>
-            </div>
-          </div>
-        </motion.footer>
-      </div>
+      </motion.div>
     </div>
   );
-
 }
 
 export default Home;

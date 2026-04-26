@@ -195,6 +195,37 @@ const SubjectGallery = ({ subjects, meta }) => {
           ))}
         </div>
 
+        {/* Compact Floating Footer */}
+        <div className="gallery-compact-footer">
+          <div className="compact-footer-actions">
+            <select 
+              className="compact-subject-select"
+              value={subjects[activeIndex]?._id || ''}
+              onChange={(e) => {
+                const targetId = e.target.value;
+                const targetIndex = subjects.findIndex(s => s._id === targetId);
+                if (targetIndex !== -1) setActiveIndex(targetIndex);
+              }}
+            >
+              {subjects.map(s => (
+                <option key={s._id} value={s._id}>{s.name}</option>
+              ))}
+            </select>
+            <button 
+              className="compact-cta-btn"
+              onClick={() => navigate(`/subject/${subjects[activeIndex]._id}`)}
+            >
+              View Details
+            </button>
+            <button 
+              className="compact-cta-btn secondary"
+              onClick={() => navigate('/all-posts')}
+            >
+              All Posts
+            </button>
+          </div>
+        </div>
+
         {/* Scroll Indicator */}
         <div className="gallery-scroll-prompt">
           <div className="mouse">
