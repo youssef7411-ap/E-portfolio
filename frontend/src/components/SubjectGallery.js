@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import gsap from 'gsap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/SubjectGallery.css';
 
@@ -195,10 +194,11 @@ const SubjectGallery = ({ subjects, meta }) => {
       { threshold: 0.1 }
     );
 
-    if (wrapperRef.current) observer.observe(wrapperRef.current);
-
-    return () => {
-      if (wrapperRef.current) observer.unobserve(wrapperRef.current);
+    const currentWrapper = wrapperRef.current;
+     if (currentWrapper) observer.observe(currentWrapper);
+  
+      return () => {
+        if (currentWrapper) observer.unobserve(currentWrapper);
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', handleResize);
       if (animationId) cancelAnimationFrame(animationId);

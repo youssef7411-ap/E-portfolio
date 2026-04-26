@@ -50,7 +50,7 @@ const getPostTimestamp = (post) => {
 
 function Home() {
   const dispatch = useDispatch();
-  const { subjects, posts, loading } = useSelector((state) => state.portfolio);
+  const { subjects, posts } = useSelector((state) => state.portfolio);
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [introFinished, setIntroFinished] = useState(false);
   const navigate = useNavigate();
@@ -255,45 +255,6 @@ function Home() {
       }],
     };
   }, [posts, chartPalette]);
-
-  const barOptions = useMemo(() => ({
-    ...baseChartOptions,
-    plugins: {
-      ...baseChartOptions.plugins,
-      legend: { display: false },
-    },
-  }), [baseChartOptions]);
-
-  const donutOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '60%',
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          color: chartPalette.textSoft,
-          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
-          padding: 14,
-        },
-      },
-      tooltip: baseChartOptions.plugins.tooltip,
-    },
-  }), [chartPalette, baseChartOptions]);
-
-  const lineOptions = useMemo(() => ({
-    ...baseChartOptions,
-    plugins: {
-      ...baseChartOptions.plugins,
-      legend: { display: false },
-    },
-    interaction: { intersect: false, mode: 'index' },
-  }), [baseChartOptions]);
-
-  const handleExploreSubject = () => {
-    if (!selectedSubjectId) return;
-    navigate(`/subject/${selectedSubjectId}`);
-  };
 
   return (
     <div className="home">
