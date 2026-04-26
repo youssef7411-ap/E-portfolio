@@ -335,16 +335,12 @@ function Home() {
             </div>
           </motion.section>
 
-          <motion.section
-            className="gallery-section"
+          <motion.section 
+            className="gallery-section-container"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.5, delay: 0.6 }}
           >
-            <div className="home-section-head">
-              <h3>Subject Archive</h3>
-              <span>Explore the work</span>
-            </div>
             <SubjectGallery
               subjects={sortedSubjects}
               meta={subjectMeta}

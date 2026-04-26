@@ -112,15 +112,12 @@
   height: 220px;
 }
 
-.gallery-section {
-  padding-top: 100px;
-  padding-bottom: 100px;
+.gallery-section-container {
+  width: 100%;
+  position: relative;
   background: rgba(2, 6, 23, 0.4);
 }
 
-.gallery-section.horizontal-mode {
-  cursor: ew-resize;
-}
 
 .home-section-head {
   display: flex;

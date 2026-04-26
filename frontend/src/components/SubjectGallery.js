@@ -7,74 +7,97 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const SubjectGallery = ({ subjects, meta }) => {
   const navigate = useNavigate();
-  const scrollerRef = useRef(null);
-  const containerRef = useRef(null);
+  const sectionRef = useRef(null);
+  const stickyRef = useRef(null);
+  const trackRef = useRef(null);
   const itemsRef = useRef([]);
+
+  const [containerHeight, setContainerHeight] = useState('auto');
 
   const scrollState = useRef({
     current: 0,
     target: 0,
-    ease: 0.08,
+    ease: 0.08, // Extra smooth easing matching Codrops feel
     limit: 0,
   });
 
-  const dragStateRef = useRef({
-    active: false,
-    startX: 0,
-    startScroll: 0,
-  });
-
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Set limits on resize and mount
-  const updateLimit = useCallback(() => {
-    if (!containerRef.current || !scrollerRef.current) return;
-    scrollState.current.limit = containerRef.current.scrollWidth - scrollerRef.current.clientWidth;
+  // Calculate the total scrollable height needed for the horizontal track
+  const updateLayout = useCallback(() => {
+    if (!trackRef.current || !stickyRef.current) return;
+    
+    const trackWidth = trackRef.current.scrollWidth;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // The "limit" is how much horizontal scroll we need
+    scrollState.current.limit = trackWidth - viewportWidth;
+    
+    // The "containerHeight" is how much vertical scroll we want to dedicate to this section
+    // We add viewportHeight so the sticky content stays in view for the duration
+    const totalVerticalScroll = scrollState.current.limit + viewportHeight;
+    setContainerHeight(`${totalVerticalScroll}px`);
   }, []);
 
   useEffect(() => {
-    updateLimit();
-    window.addEventListener('resize', updateLimit);
-    return () => window.removeEventListener('resize', updateLimit);
-  }, [updateLimit, subjects]);
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    // Extra update after a small delay to ensure all images/layout are settled
+    const timer = setTimeout(updateLayout, 500);
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      clearTimeout(timer);
+    };
+  }, [updateLayout, subjects]);
 
-  // Smooth Render Loop
+  // Smooth Render Loop tied to Page Scroll
   useEffect(() => {
     let rafId;
     
     const render = () => {
+      if (!sectionRef.current || !trackRef.current) return;
+
       const state = scrollState.current;
+      const rect = sectionRef.current.getBoundingClientRect();
+
+      // Calculate progress based on vertical position of the section
+      // 0 = section top at viewport top
+      // limit = section bottom at viewport bottom
+      const progress = clamp(-rect.top, 0, state.limit);
+      state.target = progress;
       
-      // Keep target within bounds
-      state.target = clamp(state.target, 0, state.limit);
-      
-      // Interpolate current position
+      // Smoothly interpolate current position
       state.current = lerp(state.current, state.target, state.ease);
       
-      // Apply main transform
-      if (containerRef.current) {
-        containerRef.current.style.transform = `translate3d(${-state.current}px, 0, 0)`;
-      }
+      // Apply main horizontal transform
+      trackRef.current.style.transform = `translate3d(${-state.current}px, 0, 0)`;
 
-      // Parallax Effect on Images
+      // Parallax + Tilt Effect (Exactly matching Codrops feel)
       const vw = window.innerWidth;
       const viewportCenter = vw * 0.5;
 
       itemsRef.current.forEach((item) => {
         if (!item) return;
         const img = item.querySelector('.gallery-img-source');
+        const overlay = item.querySelector('.gallery-overlay');
         if (!img) return;
 
-        const rect = item.getBoundingClientRect();
-        const elementCenter = rect.left + rect.width * 0.5;
-
-        // Calculate offset from center (-1 to 1)
+        const itemRect = item.getBoundingClientRect();
+        const elementCenter = itemRect.left + itemRect.width * 0.5;
         const t = clamp((elementCenter - viewportCenter) / viewportCenter, -1, 1);
         
-        // Counter-shift the image
-        const maxShift = 10; // % shift relative to image width
+        // Parallax shift (intensity: 0.4 like Codrops GLMedia)
+        const maxShift = 12; // % shift
         const shift = -t * maxShift;
-        img.style.transform = `translate3d(${shift}%, 0, 0)`;
+        img.style.transform = `translate3d(${shift}%, 0, 0) scale(1.1)`;
+
+        // Dynamic Tilt (Adding that "exactly" premium feel)
+        const tilt = t * 3; // 3 degrees max tilt
+        item.style.transform = `perspective(1000px) rotateY(${-tilt}deg)`;
+        
+        // Fade overlay based on distance from center
+        if (overlay) {
+          overlay.style.opacity = 1 - Math.abs(t) * 0.5;
+        }
       });
 
       rafId = requestAnimationFrame(render);
@@ -84,92 +107,45 @@ const SubjectGallery = ({ subjects, meta }) => {
     return () => cancelAnimationFrame(rafId);
   }, []);
 
-  // Handlers
-  const handleWheel = useCallback((e) => {
-    // Only hijack if we're not at limits or scrolling horizontally
-    const state = scrollState.current;
-    const isAtStart = state.target <= 0 && e.deltaY < 0;
-    const isAtEnd = state.target >= state.limit && e.deltaY > 0;
-    
-    // If we're not at boundaries, hijack the wheel for smooth horizontal scroll
-    if (!isAtStart && !isAtEnd) {
-      e.preventDefault();
-      state.target += e.deltaY;
-    }
-  }, []);
-
-  const handlePointerDown = useCallback((e) => {
-    const state = scrollState.current;
-    dragStateRef.current = {
-      active: true,
-      startX: e.clientX,
-      startScroll: state.target,
-    };
-    setIsDragging(true);
-    if (scrollerRef.current) scrollerRef.current.setPointerCapture(e.pointerId);
-  }, []);
-
-  const handlePointerMove = useCallback((e) => {
-    if (!dragStateRef.current.active) return;
-    const delta = e.clientX - dragStateRef.current.startX;
-    scrollState.current.target = dragStateRef.current.startScroll - delta * 1.5;
-  }, []);
-
-  const handlePointerUp = useCallback((e) => {
-    dragStateRef.current.active = false;
-    setIsDragging(false);
-    if (scrollerRef.current) scrollerRef.current.releasePointerCapture(e.pointerId);
-  }, []);
-
-  const scrollByStep = (direction) => {
-    const vw = window.innerWidth;
-    scrollState.current.target += direction * (vw * 0.6);
-  };
-
   return (
-    <div className="gallery-wrapper" ref={scrollerRef} onWheel={handleWheel}>
-      <div className="gallery-toolbar">
-        <button className="gallery-nav-btn" onClick={() => scrollByStep(-1)} type="button">
-          Prev
-        </button>
-        <button className="gallery-nav-btn" onClick={() => scrollByStep(1)} type="button">
-          Next
-        </button>
-      </div>
-
-      <div 
-        className={`gallery-horizontal-container ${isDragging ? 'is-dragging' : ''}`}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <div className="gallery-track" ref={containerRef}>
-          {subjects.map((subject, index) => (
-            <div
-              key={subject._id}
-              className="gallery-item"
-              ref={el => itemsRef.current[index] = el}
-              onClick={() => !isDragging && navigate(`/subject/${subject._id}`)}
-            >
-              <div className="gallery-image-container">
-                <img
-                  src={subject.image}
-                  alt={subject.name}
-                  className="gallery-img-source"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="gallery-overlay">
-                  <span className="gallery-index">{(index + 1).toString().padStart(2, '0')}</span>
-                  <h4 className="gallery-title">{subject.name}</h4>
-                  <div className="gallery-meta">
-                    <span>{meta.get(String(subject._id))?.postCount || 0} Uploads</span>
+    <div 
+      className="gallery-sticky-wrapper" 
+      ref={sectionRef} 
+      style={{ height: containerHeight }}
+    >
+      <div className="gallery-sticky-content" ref={stickyRef}>
+        <div className="home-section-head" style={{ position: 'absolute', top: '5vh', left: '10vw', margin: 0, zIndex: 10 }}>
+          <h3>Subject Archive</h3>
+          <span>Explore the work</span>
+        </div>
+        <div className="gallery-track-container">
+          <div className="gallery-track" ref={trackRef}>
+            {subjects.map((subject, index) => (
+              <div
+                key={subject._id}
+                className="gallery-item"
+                ref={el => itemsRef.current[index] = el}
+                onClick={() => navigate(`/subject/${subject._id}`)}
+              >
+                <div className="gallery-image-container">
+                  <img
+                    src={subject.image}
+                    alt={subject.name}
+                    className="gallery-img-source"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <div className="gallery-overlay">
+                    <span className="gallery-index">{(index + 1).toString().padStart(2, '0')}</span>
+                    <h4 className="gallery-title">{subject.name}</h4>
+                    <div className="gallery-meta">
+                      <span>{meta.get(String(subject._id))?.postCount || 0} Uploads</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
