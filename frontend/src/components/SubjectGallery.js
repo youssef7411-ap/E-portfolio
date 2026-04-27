@@ -22,13 +22,13 @@ const SubjectGallery = ({ subjects, meta }) => {
   const touchStart = useRef(0);
   const wheelThreshold = 40; // Minimum delta to trigger a slide change
 
-  // Intersection Observer to detect when section is in view
+  // Intersection Observer to detect when the Subjects section is active
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
+        setIsIntersecting(entry.intersectionRatio >= 0.25);
       },
-      { threshold: 0.6 } // Section must be 60% visible to capture scroll
+      { threshold: [0.1, 0.25, 0.5, 0.75, 1] }
     );
 
     if (sectionRef.current) {
@@ -40,38 +40,40 @@ const SubjectGallery = ({ subjects, meta }) => {
 
   // Handle Wheel Events
   useEffect(() => {
+    const atFirstSlide = () => activeIndex === 0;
+    const atLastSlide = () => activeIndex === subjects.length - 1;
+
     const handleWheel = (e) => {
       if (!isIntersecting) return;
 
       const now = Date.now();
       const delta = e.deltaY;
-      
-      // Ignore micro-scrolls
+      const goingDown = delta > 0;
+      const goingUp = delta < 0;
+
       if (Math.abs(delta) < wheelThreshold) return;
 
-      if (now - lastWheelTime.current < scrollCooldown) {
-        // Still in cooldown, strictly block transition
-        if ((delta > 0 && activeIndex < subjects.length - 1) || 
-            (delta < 0 && activeIndex > 0)) {
-          if (e.cancelable) e.preventDefault();
+      const shouldBlock = (goingDown && !atLastSlide()) || (goingUp && !atFirstSlide());
+      const withinCooldown = now - lastWheelTime.current < scrollCooldown;
+
+      if (withinCooldown) {
+        if (shouldBlock && e.cancelable) {
+          e.preventDefault();
         }
         return;
       }
 
-      if (delta > 0) {
-        // Scrolling Down
-        if (activeIndex < subjects.length - 1) {
-          if (e.cancelable) e.preventDefault();
-          setActiveIndex(prev => prev + 1);
-          lastWheelTime.current = now;
-        }
-      } else if (delta < 0) {
-        // Scrolling Up
-        if (activeIndex > 0) {
-          if (e.cancelable) e.preventDefault();
-          setActiveIndex(prev => prev - 1);
-          lastWheelTime.current = now;
-        }
+      if (goingDown && !atLastSlide()) {
+        if (e.cancelable) e.preventDefault();
+        setActiveIndex((prev) => prev + 1);
+        lastWheelTime.current = now;
+        return;
+      }
+
+      if (goingUp && !atFirstSlide()) {
+        if (e.cancelable) e.preventDefault();
+        setActiveIndex((prev) => prev - 1);
+        lastWheelTime.current = now;
       }
     };
 
@@ -81,38 +83,47 @@ const SubjectGallery = ({ subjects, meta }) => {
 
     const handleTouchMove = (e) => {
       if (!isIntersecting) return;
-      
+
       const touchEnd = e.touches[0].clientY;
       const deltaY = touchStart.current - touchEnd;
+      const goingDown = deltaY > 0;
+      const goingUp = deltaY < 0;
 
-      if (Math.abs(deltaY) < 50) return; // threshold
+      if (Math.abs(deltaY) < 50) return;
 
       const now = Date.now();
-      if (now - lastWheelTime.current < scrollCooldown) return;
+      const withinCooldown = now - lastWheelTime.current < scrollCooldown;
+      const shouldBlock = (goingDown && !atLastSlide()) || (goingUp && !atFirstSlide());
 
-      if (deltaY > 0) {
-        if (activeIndex < subjects.length - 1) {
-          if (e.cancelable) e.preventDefault();
-          setActiveIndex(prev => prev + 1);
-          lastWheelTime.current = now;
+      if (withinCooldown) {
+        if (shouldBlock && e.cancelable) {
+          e.preventDefault();
         }
-      } else {
-        if (activeIndex > 0) {
-          if (e.cancelable) e.preventDefault();
-          setActiveIndex(prev => prev - 1);
-          lastWheelTime.current = now;
-        }
+        return;
+      }
+
+      if (goingDown && !atLastSlide()) {
+        if (e.cancelable) e.preventDefault();
+        setActiveIndex((prev) => prev + 1);
+        lastWheelTime.current = now;
+        return;
+      }
+
+      if (goingUp && !atFirstSlide()) {
+        if (e.cancelable) e.preventDefault();
+        setActiveIndex((prev) => prev - 1);
+        lastWheelTime.current = now;
       }
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('wheel', handleWheel, { capture: true });
       window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchmove', handleTouchMove, { capture: true });
     };
   }, [isIntersecting, activeIndex, subjects.length]);
 
