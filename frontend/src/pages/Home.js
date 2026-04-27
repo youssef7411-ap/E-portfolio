@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import {
@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import SubjectGallery from '../components/SubjectGallery';
-import MagazineIntro from '../components/MagazineIntro';
+import TransitionWrapper from '../components/TransitionWrapper';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
 
@@ -50,7 +50,6 @@ const getPostTimestamp = (post) => {
 function Home() {
   const dispatch = useDispatch();
   const { subjects, posts } = useSelector((state) => state.portfolio);
-  const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
     dispatch(fetchPortfolioData());
@@ -242,20 +241,14 @@ function Home() {
 
   return (
     <div className="home">
-      {showIntro && <MagazineIntro onComplete={() => setShowIntro(false)} />}
-      
-      <motion.div 
-        className="main-layout is-visible"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showIntro ? 0 : 1 }}
-        transition={{ duration: 1 }}
-      >
-        <motion.header 
-          className="portfolio-header"
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: showIntro ? 0 : 1, y: showIntro ? -50 : 0 }}
-          transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        >
+      <TransitionWrapper onTransitionComplete={() => {}}>
+        <div className="main-layout is-visible">
+          <motion.header 
+            className="portfolio-header"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
           <div className="container">
             <h1 className="hero-headline">Youssef’s Portfolio</h1>
           </div>
@@ -264,9 +257,9 @@ function Home() {
         <main>
           <motion.section
             className="dashboard-section"
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: showIntro ? 0 : 1, y: showIntro ? 100 : 0 }}
-            transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="container">
               <div className="dashboard-stats-ribbon">
@@ -331,16 +324,28 @@ function Home() {
           <motion.section 
             className="gallery-section-container"
             initial={{ opacity: 0 }}
-            animate={{ opacity: showIntro ? 0 : 1 }}
-            transition={{ duration: 1.5, delay: 0.6 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1 }}
           >
             <SubjectGallery
               subjects={sortedSubjects}
               meta={subjectMeta}
             />
           </motion.section>
+
+          <motion.footer
+            className="portfolio-footer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1.2 }}
+          >
+            <div className="container">
+              <p>Youssef's Portfolio</p>
+            </div>
+          </motion.footer>
         </main>
-      </motion.div>
+      </div>
+      </TransitionWrapper>
     </div>
   );
 }

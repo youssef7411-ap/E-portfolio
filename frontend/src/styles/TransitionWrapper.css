@@ -1,0 +1,52 @@
+/* ─── Seamless Transition Wrapper ────────────────────────────────── */
+
+.transition-wrapper {
+  position: relative;
+  width: 100%;
+  background: var(--bg-main, #020617);
+}
+
+/* Magazine Container - Integrated Phase */
+.magazine-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+  background: var(--bg-main, #020617);
+}
+
+/* Content Container - Dashboard Reveal */
+.content-container {
+  position: relative;
+  width: 100%;
+  z-index: 0;
+  background: var(--bg-main, #020617);
+}
+
+/* Morphing Overlay - Smooth Transition Effect */
+.morphing-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(2, 6, 23, 0.8) 0%,
+    rgba(2, 6, 23, 0.4) 50%,
+    rgba(2, 6, 23, 0) 100%
+  );
+  z-index: 500;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .magazine-container {
+    height: 100vh;
+  }
+  
+  .content-container {
+    width: 100%;
+  }
+}

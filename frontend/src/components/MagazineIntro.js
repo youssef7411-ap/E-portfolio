@@ -360,12 +360,9 @@ const MagazineIntro = ({ onComplete }) => {
     <div 
       ref={containerRef}
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 9999,
+        position: 'relative',
+        width: '100%',
+        height: '100%',
         background: '#020617',
         cursor: 'pointer',
         display: 'flex',
@@ -383,8 +380,8 @@ const MagazineIntro = ({ onComplete }) => {
     >
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
       {loading && (
-        <div style={{ position: 'absolute', color: 'white', fontFamily: 'monospace' }}>
-          LOADING INTRO...
+        <div style={{ position: 'absolute', color: 'white', fontFamily: 'monospace', fontSize: '14px' }}>
+          Loading Portfolio...
         </div>
       )}
     </div>
