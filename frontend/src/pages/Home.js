@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import {
@@ -52,7 +51,6 @@ function Home() {
   const dispatch = useDispatch();
   const { subjects, posts } = useSelector((state) => state.portfolio);
   const [showIntro, setShowIntro] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     dispatch(fetchPortfolioData());
