@@ -16,11 +16,13 @@ const SubjectGallery = ({ subjects, meta }) => {
   const sectionRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isIntersecting, setIsIntersecting] = useState(false);
+  const [canExitUpward, setCanExitUpward] = useState(false); // Track if user can scroll out upward
   
   const lastWheelTime = useRef(0);
-  const scrollCooldown = 1100; // Increased cooldown to match/exceed CSS transition (0.8s)
+  const scrollCooldown = 800; // Smoother, faster cooldown for fluid transitions
   const touchStart = useRef(0);
-  const wheelThreshold = 40; // Minimum delta to trigger a slide change
+  const wheelThreshold = 30; // More responsive scroll detection
+  const scrollDirection = useRef('none'); // Track scroll direction
 
   // Intersection Observer to detect when the Subjects section is active
   useEffect(() => {
@@ -38,7 +40,7 @@ const SubjectGallery = ({ subjects, meta }) => {
     return () => observer.disconnect();
   }, []);
 
-  // Handle Wheel Events
+  // Handle Wheel Events with Smooth Transitions and Exit Logic
   useEffect(() => {
     const atFirstSlide = () => activeIndex === 0;
     const atLastSlide = () => activeIndex === subjects.length - 1;
@@ -53,27 +55,57 @@ const SubjectGallery = ({ subjects, meta }) => {
 
       if (Math.abs(delta) < wheelThreshold) return;
 
-      const shouldBlock = (goingDown && !atLastSlide()) || (goingUp && !atFirstSlide());
       const withinCooldown = now - lastWheelTime.current < scrollCooldown;
 
-      if (withinCooldown) {
-        if (shouldBlock && e.cancelable) {
-          e.preventDefault();
+      // Scrolling Down - Navigate through subjects forward
+      if (goingDown) {
+        scrollDirection.current = 'down';
+        setCanExitUpward(false); // Reset exit flag when going back into subjects
+        
+        if (atLastSlide()) {
+          // At last subject, allow page scroll
+          return;
         }
-        return;
-      }
-
-      if (goingDown && !atLastSlide()) {
+        
+        if (withinCooldown) return;
         if (e.cancelable) e.preventDefault();
-        setActiveIndex((prev) => prev + 1);
+        setActiveIndex((prev) => Math.min(prev + 1, subjects.length - 1));
         lastWheelTime.current = now;
         return;
       }
 
-      if (goingUp && !atFirstSlide()) {
-        if (e.cancelable) e.preventDefault();
-        setActiveIndex((prev) => prev - 1);
-        lastWheelTime.current = now;
+      // Scrolling Up - Navigate backward or exit
+      if (goingUp) {
+        scrollDirection.current = 'up';
+
+        if (atFirstSlide() && canExitUpward) {
+          // At first subject and user has scrolled through all backward - allow page scroll
+          return;
+        }
+
+        if (atLastSlide() && !canExitUpward) {
+          // Starting reverse journey from last subject
+          setCanExitUpward(true);
+          if (e.cancelable) e.preventDefault();
+          return;
+        }
+
+        if (!atFirstSlide()) {
+          // Navigate up through subjects
+          if (withinCooldown) {
+            if (e.cancelable) e.preventDefault();
+            return;
+          }
+          if (e.cancelable) e.preventDefault();
+          setActiveIndex((prev) => Math.max(prev - 1, 0));
+          lastWheelTime.current = now;
+        } else if (atFirstSlide() && canExitUpward) {
+          // Allow natural page scroll
+          return;
+        } else {
+          // At first slide but haven't enabled exit - block scroll
+          if (e.cancelable) e.preventDefault();
+        }
       }
     };
 
@@ -89,30 +121,54 @@ const SubjectGallery = ({ subjects, meta }) => {
       const goingDown = deltaY > 0;
       const goingUp = deltaY < 0;
 
-      if (Math.abs(deltaY) < 50) return;
+      if (Math.abs(deltaY) < 40) return; // Touch threshold
 
       const now = Date.now();
       const withinCooldown = now - lastWheelTime.current < scrollCooldown;
-      const shouldBlock = (goingDown && !atLastSlide()) || (goingUp && !atFirstSlide());
 
-      if (withinCooldown) {
-        if (shouldBlock && e.cancelable) {
-          e.preventDefault();
+      // Scrolling Down - Navigate through subjects forward
+      if (goingDown) {
+        scrollDirection.current = 'down';
+        setCanExitUpward(false);
+
+        if (atLastSlide()) {
+          return;
         }
-        return;
-      }
 
-      if (goingDown && !atLastSlide()) {
+        if (withinCooldown) return;
         if (e.cancelable) e.preventDefault();
-        setActiveIndex((prev) => prev + 1);
+        setActiveIndex((prev) => Math.min(prev + 1, subjects.length - 1));
         lastWheelTime.current = now;
         return;
       }
 
-      if (goingUp && !atFirstSlide()) {
-        if (e.cancelable) e.preventDefault();
-        setActiveIndex((prev) => prev - 1);
-        lastWheelTime.current = now;
+      // Scrolling Up - Navigate backward or exit
+      if (goingUp) {
+        scrollDirection.current = 'up';
+
+        if (atFirstSlide() && canExitUpward) {
+          return;
+        }
+
+        if (atLastSlide() && !canExitUpward) {
+          setCanExitUpward(true);
+          if (e.cancelable) e.preventDefault();
+          return;
+        }
+
+        if (!atFirstSlide()) {
+          if (withinCooldown) {
+            if (e.cancelable) e.preventDefault();
+            return;
+          }
+          if (e.cancelable) e.preventDefault();
+          setActiveIndex((prev) => Math.max(prev - 1, 0));
+          lastWheelTime.current = now;
+        } else if (atFirstSlide() && canExitUpward) {
+          return;
+        } else {
+          if (e.cancelable) e.preventDefault();
+        }
       }
     };
 
@@ -125,7 +181,7 @@ const SubjectGallery = ({ subjects, meta }) => {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove, { capture: true });
     };
-  }, [isIntersecting, activeIndex, subjects.length]);
+  }, [isIntersecting, activeIndex, subjects.length, canExitUpward]);
 
   return (
     <div 
