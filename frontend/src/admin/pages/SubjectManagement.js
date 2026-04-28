@@ -49,23 +49,32 @@ const validateHeaderFile = (file) => {
 };
 
 function SortableRow({ subject, onEdit, onDelete }) {
+  // Ensure subject is valid and has required properties
+  if (!subject || typeof subject !== 'object') {
+    return null;
+  }
+
+  const subjectName = String(subject.name || '');
+  const subjectDescription = String(subject.description || '');
+  const subjectImage = String(subject.image || '');
+
   return (
     <tr>
       <td>
         <div className="sm-name-cell">
           <div
             className="sm-thumb sm-image-thumb"
-            title={subject.name}
+            title={subjectName}
           >
-            {subject.image ? (
-              <img src={subject.image} alt="" className="sm-thumb-img" loading="lazy" />
+            {subjectImage ? (
+              <img src={subjectImage} alt="" className="sm-thumb-img" loading="lazy" />
             ) : (
-              <span className="sm-thumb-letter">{subject.name.slice(0, 2).toUpperCase()}</span>
+              <span className="sm-thumb-letter">{subjectName.slice(0, 2).toUpperCase()}</span>
             )}
           </div>
           <div className="sm-name-info">
-            <span className="sm-name">{subject.name}</span>
-            <span className="sm-desc">{subject.description?.slice(0, 50) || 'No description'}</span>
+            <span className="sm-name">{subjectName}</span>
+            <span className="sm-desc">{subjectDescription.slice(0, 50) || 'No description'}</span>
           </div>
         </div>
       </td>
@@ -534,14 +543,16 @@ function SubjectManagement() {
             </tr>
           </thead>
           <tbody>
-            {subjects.map(subject => (
-              <SortableRow
-                key={subject._id}
-                subject={subject}
-                onEdit={openEdit}
-                onDelete={handleDelete}
-              />
-            ))}
+            {subjects
+              .filter(subject => subject && subject._id) // Filter out invalid subjects
+              .map(subject => (
+                <SortableRow
+                  key={subject._id}
+                  subject={subject}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
           </tbody>
         </table>
         {subjects.length === 0 && (
