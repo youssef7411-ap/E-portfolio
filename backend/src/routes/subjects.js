@@ -22,6 +22,7 @@ const sanitizeSubjectPayload = (body = {}) => ({
   name: String(body.name ?? '').trim(),
   description: String(body.description ?? ''),
   image: String(body.image ?? ''),
+  bgColor: String(body.bgColor ?? '#3b82f6').trim(),
   visible: body.visible !== false,
   order: Number(body.order) || 0,
   preview: sanitizePreview(body.preview),

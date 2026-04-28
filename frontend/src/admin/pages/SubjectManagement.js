@@ -48,20 +48,26 @@ const validateHeaderFile = (file) => {
   return '';
 };
 
-/* ── Sortable row ─────────────────────────────── */
 function SortableRow({ subject, onEdit, onDelete }) {
   return (
     <tr>
       <td>
         <div className="sm-name-cell">
-          {subject.image ? (
-            <img src={subject.image} alt="" className="sm-thumb" loading="lazy" />
-          ) : (
-            <div className="sm-thumb sm-placeholder">
-              {subject.name.slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <span>{subject.name}</span>
+          <div 
+            className="sm-thumb sm-color-thumb" 
+            style={{ backgroundColor: subject.bgColor || '#3b82f6' }}
+            title={subject.bgColor}
+          >
+            {subject.image ? (
+              <img src={subject.image} alt="" className="sm-thumb-img" loading="lazy" />
+            ) : (
+              <span className="sm-thumb-letter">{subject.name.slice(0, 2).toUpperCase()}</span>
+            )}
+          </div>
+          <div className="sm-name-info">
+            <span className="sm-name">{subject.name}</span>
+            <span className="sm-desc">{subject.description?.slice(0, 50) || 'No description'}</span>
+          </div>
         </div>
       </td>
       <td>
@@ -177,7 +183,9 @@ function SubjectManagement() {
   const [cropTarget] = useState('image');
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     image: '',
+    bgColor: '#3b82f6',
   });
   const [headerPreview, setHeaderPreview] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -354,7 +362,7 @@ function SubjectManagement() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', image: '' });
+    setFormData({ name: '', description: '', image: '', bgColor: '#3b82f6' });
     setHeaderPreview('');
     setUploadStatus('');
     setUploadProgress(0);
@@ -366,7 +374,9 @@ function SubjectManagement() {
     setEditingId(subject._id);
     setFormData({
       name: subject.name || '',
+      description: subject.description || '',
       image: subject.image || '',
+      bgColor: subject.bgColor || '#3b82f6',
     });
     setHeaderPreview(subject.image || '');
     setUploadStatus('');
@@ -460,53 +470,93 @@ function SubjectManagement() {
                 />
               </div>
 
-              <div className="sm-upload-grid sm-upload-grid-single">
-                <div className="form-group">
-                  <label>Header Image (16:9 recommended)</label>
-                  <div {...getHeaderProps()} className={`sm-upload-drop ${isHeaderDragActive ? 'active' : ''}`}>
-                    <input {...getHeaderInputProps()} />
-                    {headerPreview ? (
-                      <div className="sm-upload-preview">
-                        <img src={headerPreview} alt="Header Preview" />
-                        <div className="sm-upload-overlay">Change Header</div>
-                      </div>
-                    ) : (
-                      <span className="sm-upload-label">
-                        {uploading ? 'Processing...' : 'Drop header image here or click to upload'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="sm-upload-hint">Accepted formats: JPG, PNG, WEBP. Max size: {MAX_HEADER_SIZE_MB}MB.</p>
-                  {(uploadStatus || uploading) && (
-                    <div className="sm-upload-status" aria-live="polite">
-                      <div className="sm-upload-status-head">
-                        <span>{uploadStatus || 'Uploading image...'}</span>
-                        <strong>{uploadProgress}%</strong>
-                      </div>
-                      <div className="sm-upload-progress-track" aria-hidden="true">
-                        <span className="sm-upload-progress-fill" style={{ width: `${uploadProgress}%` }} />
-                      </div>
-                    </div>
-                  )}
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleFormChange}
+                  placeholder="Brief description of this subject"
+                  rows={3}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="bgColor">Subject Color (Bookshelf Display)</label>
+                <div className="sm-color-picker-wrapper">
+                  <input
+                    id="bgColor"
+                    type="color"
+                    name="bgColor"
+                    value={formData.bgColor}
+                    onChange={handleFormChange}
+                    className="sm-color-picker"
+                  />
+                  <input
+                    type="text"
+                    value={formData.bgColor}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (/^#[0-9A-F]{6}$/i.test(val)) {
+                        setFormData(prev => ({ ...prev, bgColor: val }));
+                      }
+                    }}
+                    placeholder="#3b82f6"
+                    maxLength={7}
+                    className="sm-hex-input"
+                  />
+                  <div 
+                    className="sm-color-preview" 
+                    style={{ backgroundColor: formData.bgColor }}
+                    title={`Color: ${formData.bgColor}`}
+                  />
                 </div>
               </div>
 
               <div className="sm-preview-section">
-                <label>Subject Header Preview</label>
-                <div className="sm-header-preview-card">
-                  {headerPreview ? (
-                    <img src={headerPreview} alt="Subject header preview" className="sm-header-preview-img" />
-                  ) : (
-                    <div className="sm-header-preview-placeholder">
-                      Header preview will appear here
+                <label>Subject Book Preview</label>
+                <div className="sm-book-preview">
+                  <div 
+                    className="sm-book-card"
+                    style={{ backgroundColor: formData.bgColor }}
+                  >
+                    <div className="sm-book-content">
+                      <h3>{formData.name || 'Subject Name'}</h3>
+                      <p>{formData.description || 'Subject description'}</p>
                     </div>
-                  )}
-                  <div className="sm-preview-info">
-                    <strong>{formData.name || 'Subject Name'}</strong>
-                    <span>Only header image upload is enabled for cleaner and faster management.</span>
                   </div>
                 </div>
               </div>
+
+              <div className="form-group">
+                <label>Header Image (16:9 recommended)</label>
+                <div {...getHeaderProps()} className={`sm-upload-drop ${isHeaderDragActive ? 'active' : ''}`}>
+                  <input {...getHeaderInputProps()} />
+                  {headerPreview ? (
+                    <div className="sm-upload-preview">
+                      <img src={headerPreview} alt="Header Preview" />
+                      <div className="sm-upload-overlay">Change Header</div>
+                    </div>
+                  ) : (
+                    <span className="sm-upload-label">
+                      {uploading ? 'Processing...' : 'Drop header image here or click to upload'}
+                    </span>
+                  )}
+                </div>
+                <p className="sm-upload-hint">Accepted formats: JPG, PNG, WEBP. Max size: {MAX_HEADER_SIZE_MB}MB.</p>
+                {(uploadStatus || uploading) && (
+                  <div className="sm-upload-status" aria-live="polite">
+                    <div className="sm-upload-status-head">
+                      <span>{uploadStatus || 'Uploading image...'}</span>
+                      <strong>{uploadProgress}%</strong>
+                    </div>
+                    <div className="sm-upload-progress-track" aria-hidden="true">
+                      <span className="sm-upload-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
 
               {uploadError && <p className="sm-upload-error" role="alert">{uploadError}</p>}
               {uploadSuccess && <p className="sm-upload-success">{uploadSuccess}</p>}

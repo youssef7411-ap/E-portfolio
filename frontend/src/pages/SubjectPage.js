@@ -140,7 +140,15 @@ function SubjectPage({ darkMode, setDarkMode }) {
   return (
     <div className="sp-page">
       {/* Hero Banner - Full Width */}
-      <div className="subject-hero">
+      <motion.div 
+        className="subject-hero"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        style={{
+          backgroundColor: subject.bgColor || 'var(--accent)',
+        }}
+      >
         {subject?.image ? (
           <img src={subject.image} alt={subject.name} className="subject-hero-img" />
         ) : (
@@ -148,24 +156,54 @@ function SubjectPage({ darkMode, setDarkMode }) {
         )}
         <div className="subject-hero-overlay" />
         <div className="container subject-hero-content">
-          <button className="sp-back-link" onClick={() => navigate('/')}>
-            ← Back to subjects
-          </button>
-          <div className="subject-title-area">
+          <motion.button 
+            className="sp-back-link" 
+            onClick={() => navigate('/')}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            whileHover={{ x: -4 }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Subjects
+          </motion.button>
+          <motion.div 
+            className="subject-title-area"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
             {subject.buttonImage && (
               <div className="subject-title-icon" style={{ backgroundColor: subject.bgColor }}>
                 <img src={subject.buttonImage} alt="" />
               </div>
             )}
             <h1>{subject.name}</h1>
-          </div>
-          {subject.description && <p className="subject-description">{subject.description}</p>}
-          <div className="subject-stats">
+          </motion.div>
+          {subject.description && (
+            <motion.p 
+              className="subject-description"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              {subject.description}
+            </motion.p>
+          )}
+          <motion.div 
+            className="subject-stats"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
             <span className="stat-pill">{posts.length} posts</span>
             <span className="stat-pill">{filtered.length} visible</span>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="container sp-layout">
         <aside className="sp-sidebar">

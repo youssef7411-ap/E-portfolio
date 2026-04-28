@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import MagazineIntro from './MagazineIntro';
 import '../styles/TransitionWrapper.css';
@@ -8,10 +8,32 @@ import '../styles/TransitionWrapper.css';
  * 
  * Integrates the WebGL magazine animation with dashboard reveal.
  * Creates a cinematic morphing effect from loading to final UI.
+ * 
+ * First-time visitor flow:
+ * - Check sessionStorage for hasVisited flag
+ * - If not set: show WebGL magazine animation
+ * - Set flag and transition to dashboard
+ * - On refresh/navigation: skip magazine, show dashboard directly
  */
 const TransitionWrapper = ({ children, onTransitionComplete }) => {
-  const [transitionPhase, setTransitionPhase] = useState('magazine'); // 'magazine' → 'morphing' → 'complete'
+  const [transitionPhase, setTransitionPhase] = useState('checking'); // 'checking' → 'magazine' → 'morphing' → 'complete'
   const wrapperRef = useRef(null);
+  const [shouldShowMagazine, setShouldShowMagazine] = useState(false);
+
+  useEffect(() => {
+    // Check if user has already visited in this session
+    const hasVisited = sessionStorage.getItem('hasVisited');
+    
+    if (hasVisited) {
+      // User has visited, skip magazine and go directly to content
+      setTransitionPhase('complete');
+    } else {
+      // First time visitor, show magazine
+      sessionStorage.setItem('hasVisited', 'true');
+      setShouldShowMagazine(true);
+      setTransitionPhase('magazine');
+    }
+  }, []);
 
   const handleMagazineComplete = () => {
     setTransitionPhase('morphing');
@@ -25,8 +47,8 @@ const TransitionWrapper = ({ children, onTransitionComplete }) => {
 
   return (
     <div className="transition-wrapper" ref={wrapperRef}>
-      {/* Magazine Intro - Integrated Phase */}
-      {transitionPhase !== 'complete' && (
+      {/* Magazine Intro - Integrated Phase (First-time visitors only) */}
+      {shouldShowMagazine && transitionPhase !== 'complete' && (
         <motion.div 
           className="magazine-container"
           initial={{ opacity: 1, scale: 1 }}
@@ -44,11 +66,11 @@ const TransitionWrapper = ({ children, onTransitionComplete }) => {
       {/* Dashboard Content - Reveal Phase */}
       <motion.div 
         className="content-container"
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: shouldShowMagazine ? 0 : 1, y: shouldShowMagazine ? 40 : 0 }}
         animate={
           transitionPhase === 'morphing' || transitionPhase === 'complete'
             ? { opacity: 1, y: 0 }
-            : { opacity: 0, y: 40 }
+            : { opacity: shouldShowMagazine ? 0 : 1, y: shouldShowMagazine ? 40 : 0 }
         }
         transition={{ duration: 1.2, ease: 'easeOut', delay: transitionPhase === 'morphing' ? 0.2 : 0 }}
       >
@@ -56,7 +78,7 @@ const TransitionWrapper = ({ children, onTransitionComplete }) => {
       </motion.div>
 
       {/* Morphing Overlay - Smooth Transition Effect */}
-      {transitionPhase === 'morphing' && (
+      {shouldShowMagazine && transitionPhase === 'morphing' && (
         <motion.div 
           className="morphing-overlay"
           initial={{ opacity: 1 }}

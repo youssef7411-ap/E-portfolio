@@ -319,3 +319,147 @@
     transition: none;
   }
 }
+
+/* ─── Color Picker Styles ────────────────────────────────────── */
+.sm-color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.sm-color-picker {
+  width: 60px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid rgba(96, 165, 250, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sm-color-picker:hover {
+  border-color: rgba(96, 165, 250, 0.8);
+  box-shadow: 0 0 16px rgba(96, 165, 250, 0.2);
+}
+
+.sm-hex-input {
+  flex: 1;
+  padding: 0.5rem 0.8rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.sm-hex-input:focus {
+  outline: none;
+  border-color: rgba(96, 165, 250, 0.8);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.15);
+}
+
+.sm-color-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: default;
+}
+
+/* ─── Book Preview Styles ────────────────────────────────────── */
+.sm-book-preview {
+  padding: 0.8rem;
+  background: linear-gradient(135deg, rgba(2, 6, 23, 0.6) 0%, rgba(15, 23, 42, 0.4) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sm-book-card {
+  width: 100%;
+  max-width: 160px;
+  height: 200px;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.4);
+  transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sm-book-card:hover {
+  transform: perspective(1000px) rotateY(5deg) rotateX(-2deg) translateY(-8px);
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.5);
+}
+
+.sm-book-content {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sm-book-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 0.4rem;
+}
+
+.sm-book-card p {
+  margin: 0;
+  font-size: 0.7rem;
+  opacity: 0.85;
+  line-height: 1.3;
+}
+
+/* ─── Updated Table Styles ────────────────────────────────────── */
+.sm-color-thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.sm-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+}
+
+.sm-thumb-letter {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sm-name-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sm-name {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.sm-desc {
+  display: block;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}

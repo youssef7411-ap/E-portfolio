@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import SubjectGallery from '../components/SubjectGallery';
+import Bookshelf from '../components/Bookshelf';
 import TransitionWrapper from '../components/TransitionWrapper';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
@@ -331,6 +332,14 @@ function Home() {
               subjects={sortedSubjects}
               meta={subjectMeta}
             />
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1.2 }}
+          >
+            <Bookshelf subjects={sortedSubjects} title="Explore Subjects" />
           </motion.section>
 
           <motion.footer
