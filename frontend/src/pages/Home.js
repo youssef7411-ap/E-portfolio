@@ -82,72 +82,139 @@ function Home() {
   const chartPalette = useMemo(() => {
     if (typeof window === 'undefined') {
       return {
-        text: '#f8fafc',
-        textSoft: '#94a3b8',
-        border: 'rgba(148,163,184,0.22)',
+        text: '#1e293b',
+        textSoft: '#64748b',
+        border: '#e2e8f0',
         primary: '#3b82f6',
         secondary: '#64748b',
         accent: '#f59e0b',
-        cyan: '#38bdf8',
-        green: '#22c55e',
+        cyan: '#06b6d4',
+        green: '#10b981',
         amber: '#f59e0b',
-        violet: '#a78bfa',
+        violet: '#8b5cf6',
+        rose: '#f43f5e',
+        indigo: '#6366f1',
+        teal: '#14b8a6',
+        orange: '#f97316',
+        pink: '#ec4899',
+        lime: '#84cc16',
       };
     }
 
     const styles = getComputedStyle(document.documentElement);
     const get = (name, fallback) => String(styles.getPropertyValue(name) || '').trim() || fallback;
     return {
-      text: get('--text-main', '#f8fafc'),
-      textSoft: get('--text-muted', '#94a3b8'),
-      border: get('--border', 'rgba(148,163,184,0.22)'),
-      primary: get('--primary-color', '#3b82f6'),
-      secondary: get('--secondary-color', '#64748b'),
-      accent: get('--accent-color', '#f59e0b'),
-      cyan: '#38bdf8',
-      green: '#22c55e',
+      text: get('--text-primary', '#1e293b'),
+      textSoft: get('--text-muted', '#64748b'),
+      border: get('--border-medium', '#e2e8f0'),
+      primary: get('--accent-color', '#3b82f6'),
+      secondary: get('--text-secondary', '#64748b'),
+      accent: get('--warning', '#f59e0b'),
+      cyan: '#06b6d4',
+      green: '#10b981',
       amber: '#f59e0b',
-      violet: '#a78bfa',
+      violet: '#8b5cf6',
+      rose: '#f43f5e',
+      indigo: '#6366f1',
+      teal: '#14b8a6',
+      orange: '#f97316',
+      pink: '#ec4899',
+      lime: '#84cc16',
     };
   }, []);
 
   const baseChartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'index',
+    },
     plugins: {
       legend: {
-        labels: {
-          color: chartPalette.textSoft,
-          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
-        },
+        display: false, // Hide legends for cleaner look
       },
       tooltip: {
-        backgroundColor: 'rgba(2, 6, 23, 0.92)',
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
         borderColor: chartPalette.border,
         borderWidth: 1,
         titleColor: chartPalette.text,
         bodyColor: chartPalette.textSoft,
-        titleFont: { family: 'var(--font-family-base)', weight: 700 },
-        bodyFont: { family: 'var(--font-family-base)', weight: 500 },
+        titleFont: {
+          family: 'var(--font-family-base)',
+          size: 14,
+          weight: 700
+        },
+        bodyFont: {
+          family: 'var(--font-family-base)',
+          size: 13,
+          weight: 500
+        },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          title: function(context) {
+            return context[0].label;
+          },
+          label: function(context) {
+            return `${context.dataset.label}: ${context.parsed.y || context.parsed}`;
+          }
+        }
       },
     },
     scales: {
       x: {
         ticks: {
           color: chartPalette.textSoft,
-          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
+          font: {
+            family: 'var(--font-family-base)',
+            size: 12,
+            weight: 500
+          },
+          padding: 8,
         },
-        grid: { color: 'rgba(148,163,184,0.15)' },
+        grid: {
+          color: 'rgba(226, 232, 240, 0.3)',
+          drawBorder: false,
+        },
+        border: {
+          display: false,
+        },
       },
       y: {
         ticks: {
           color: chartPalette.textSoft,
-          font: { family: 'var(--font-family-base)', size: 11, weight: 600 },
+          font: {
+            family: 'var(--font-family-base)',
+            size: 12,
+            weight: 500
+          },
+          padding: 8,
           precision: 0,
         },
-        grid: { color: 'rgba(148,163,184,0.15)' },
+        grid: {
+          color: 'rgba(226, 232, 240, 0.3)',
+          drawBorder: false,
+        },
+        border: {
+          display: false,
+        },
         beginAtZero: true,
       },
+    },
+    elements: {
+      point: {
+        radius: 0,
+        hoverRadius: 6,
+      },
+      line: {
+        borderWidth: 3,
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: 'easeInOutQuart',
     },
   }), [chartPalette]);
 
@@ -165,9 +232,27 @@ function Home() {
       datasets: [{
         label: 'Uploads',
         data: sorted.map((item) => item.uploads),
-        borderRadius: 10,
-        backgroundColor: chartPalette.primary,
-        maxBarThickness: 60,
+        backgroundColor: (context) => {
+          const { ctx, chartArea } = context.chart;
+          if (!chartArea) return;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, chartPalette.primary);
+          gradient.addColorStop(1, `${chartPalette.primary}80`);
+          return gradient;
+        },
+        borderColor: chartPalette.primary,
+        borderWidth: 0,
+        borderRadius: 6,
+        borderSkipped: false,
+        maxBarThickness: 40,
+        hoverBackgroundColor: (context) => {
+          const { ctx, chartArea } = context.chart;
+          if (!chartArea) return;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, chartPalette.indigo);
+          gradient.addColorStop(1, `${chartPalette.indigo}80`);
+          return gradient;
+        },
       }],
     };
   }, [sortedSubjects, subjectMeta, chartPalette]);
@@ -182,26 +267,34 @@ function Home() {
     const labels = Object.keys(typeCounts);
     const data = Object.values(typeCounts);
 
-    // Generate a consistent color palette for content types
-    const colors = labels.map((_, index) => {
-      const colorIndex = index % 6; // Use 6 distinct colors, cycle if more types
-      switch (colorIndex) {
-        case 0: return chartPalette.cyan;
-        case 1: return chartPalette.green;
-        case 2: return chartPalette.amber;
-        case 3: return chartPalette.violet;
-        case 4: return chartPalette.primary;
-        case 5: return chartPalette.secondary;
-        default: return '#CCCCCC'; // Fallback
-      }
+    // Professional color palette with gradients
+    const colorPalette = [
+      { primary: chartPalette.primary, secondary: `${chartPalette.primary}40` },
+      { primary: chartPalette.cyan, secondary: `${chartPalette.cyan}40` },
+      { primary: chartPalette.green, secondary: `${chartPalette.green}40` },
+      { primary: chartPalette.amber, secondary: `${chartPalette.amber}40` },
+      { primary: chartPalette.violet, secondary: `${chartPalette.violet}40` },
+      { primary: chartPalette.rose, secondary: `${chartPalette.rose}40` },
+      { primary: chartPalette.teal, secondary: `${chartPalette.teal}40` },
+      { primary: chartPalette.orange, secondary: `${chartPalette.orange}40` },
+    ];
+
+    const backgroundColors = labels.map((_, index) => {
+      const colorSet = colorPalette[index % colorPalette.length];
+      return `linear-gradient(135deg, ${colorSet.primary}, ${colorSet.secondary})`;
     });
 
     return {
       labels: labels,
       datasets: [{
         data: data,
-        backgroundColor: colors,
-        borderWidth: 0,
+        backgroundColor: backgroundColors,
+        borderColor: chartPalette.border,
+        borderWidth: 2,
+        hoverBorderColor: chartPalette.text,
+        hoverBorderWidth: 3,
+        hoverOffset: 8,
+        spacing: 2,
       }],
     };
   }, [posts, chartPalette]);
@@ -230,10 +323,25 @@ function Home() {
         label: 'Activity',
         data: days.map((day) => day.count),
         borderColor: chartPalette.primary,
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        backgroundColor: (context) => {
+          const { ctx, chartArea } = context.chart;
+          if (!chartArea) return;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, `${chartPalette.primary}60`);
+          gradient.addColorStop(0.5, `${chartPalette.primary}30`);
+          gradient.addColorStop(1, `${chartPalette.primary}10`);
+          return gradient;
+        },
         pointBackgroundColor: chartPalette.primary,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: chartPalette.indigo,
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
         fill: true,
-        borderWidth: 2,
+        borderWidth: 3,
         tension: 0.4,
       }],
     };

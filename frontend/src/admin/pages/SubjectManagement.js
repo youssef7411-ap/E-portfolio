@@ -53,10 +53,9 @@ function SortableRow({ subject, onEdit, onDelete }) {
     <tr>
       <td>
         <div className="sm-name-cell">
-          <div 
-            className="sm-thumb sm-color-thumb" 
-            style={{ backgroundColor: subject.bgColor || '#3b82f6' }}
-            title={subject.bgColor}
+          <div
+            className="sm-thumb sm-image-thumb"
+            title={subject.name}
           >
             {subject.image ? (
               <img src={subject.image} alt="" className="sm-thumb-img" loading="lazy" />
@@ -185,7 +184,6 @@ function SubjectManagement() {
     name: '',
     description: '',
     image: '',
-    bgColor: '#3b82f6',
   });
   const [headerPreview, setHeaderPreview] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -362,7 +360,7 @@ function SubjectManagement() {
 
   const openAdd = () => {
     setEditingId(null);
-    setFormData({ name: '', description: '', image: '', bgColor: '#3b82f6' });
+    setFormData({ name: '', description: '', image: '' });
     setHeaderPreview('');
     setUploadStatus('');
     setUploadProgress(0);
@@ -376,7 +374,6 @@ function SubjectManagement() {
       name: subject.name || '',
       description: subject.description || '',
       image: subject.image || '',
-      bgColor: subject.bgColor || '#3b82f6',
     });
     setHeaderPreview(subject.image || '');
     setUploadStatus('');
@@ -479,53 +476,6 @@ function SubjectManagement() {
                   placeholder="Brief description of this subject"
                   rows={3}
                 />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="bgColor">Subject Color (Bookshelf Display)</label>
-                <div className="sm-color-picker-wrapper">
-                  <input
-                    id="bgColor"
-                    type="color"
-                    name="bgColor"
-                    value={formData.bgColor}
-                    onChange={handleFormChange}
-                    className="sm-color-picker"
-                  />
-                  <input
-                    type="text"
-                    value={formData.bgColor}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (/^#[0-9A-F]{6}$/i.test(val)) {
-                        setFormData(prev => ({ ...prev, bgColor: val }));
-                      }
-                    }}
-                    placeholder="#3b82f6"
-                    maxLength={7}
-                    className="sm-hex-input"
-                  />
-                  <div 
-                    className="sm-color-preview" 
-                    style={{ backgroundColor: formData.bgColor }}
-                    title={`Color: ${formData.bgColor}`}
-                  />
-                </div>
-              </div>
-
-              <div className="sm-preview-section">
-                <label>Subject Book Preview</label>
-                <div className="sm-book-preview">
-                  <div 
-                    className="sm-book-card"
-                    style={{ backgroundColor: formData.bgColor }}
-                  >
-                    <div className="sm-book-content">
-                      <h3>{formData.name || 'Subject Name'}</h3>
-                      <p>{formData.description || 'Subject description'}</p>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="form-group">

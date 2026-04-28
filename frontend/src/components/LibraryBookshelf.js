@@ -75,7 +75,8 @@ const LibraryBookshelf = ({ subjects = [] }) => {
                     <motion.button
                       className="book-spine"
                       style={{
-                        backgroundColor: subject.bgColor || '#3b82f6',
+                        backgroundImage: subject.image ? `url(${subject.image})` : 'none',
+                        backgroundColor: subject.image ? 'transparent' : '#3b82f6',
                       }}
                       animate={isSelected ? { x: 120, rotateY: 15, zIndex: 100 } : { x: 0, rotateY: 0, zIndex: 1 }}
                       transition={{ duration: 0.6, ease: 'easeOut' }}
