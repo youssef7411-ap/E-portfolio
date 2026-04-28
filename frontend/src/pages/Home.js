@@ -14,8 +14,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
-import SubjectGallery from '../components/SubjectGallery';
-import Bookshelf from '../components/Bookshelf';
+import LibraryBookshelf from '../components/LibraryBookshelf';
 import TransitionWrapper from '../components/TransitionWrapper';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
@@ -322,24 +321,12 @@ function Home() {
             </div>
           </motion.section>
 
-          <motion.section 
-            className="gallery-section-container"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1 }}
-          >
-            <SubjectGallery
-              subjects={sortedSubjects}
-              meta={subjectMeta}
-            />
-          </motion.section>
-
           <motion.section
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
           >
-            <Bookshelf subjects={sortedSubjects} title="Explore Subjects" />
+            <LibraryBookshelf subjects={sortedSubjects} />
           </motion.section>
 
           <motion.footer
