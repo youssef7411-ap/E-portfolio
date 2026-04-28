@@ -2,22 +2,26 @@
   "name": "e-portfolio",
   "version": "1.0.0",
   "description": "Professional e-portfolio website",
-  "main": "backend/index.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "npm run build && npm --prefix backend start",
-    "run": "npm run dev",
-    "stop": "./stop",
-    "restart": "./restart",
-    "dev": "concurrently \"npm --prefix frontend start\" \"npm --prefix backend run dev\"",
+    "dev": "concurrently \"npm run client\" \"npm run server\"",
+    "start": "npm run build && npm run server:prod",
     "client": "npm --prefix frontend start",
-    "server": "npm --prefix backend start",
-    "build": "npm --prefix frontend install && npm --prefix frontend run build",
-    "test": "npm --prefix frontend test",
-    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+    "server": "npm --prefix backend run dev",
+    "server:prod": "npm --prefix backend start",
+    "build": "npm --prefix frontend run build",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install",
+    "clean": "rm -rf frontend/build backend/node_modules frontend/node_modules",
+    "db:sync": "npm --prefix backend run db:sync",
+    "db:backup": "npm --prefix backend run db:backup",
+    "db:restore": "npm --prefix backend run db:restore"
   },
   "keywords": [
     "portfolio",
-    "education"
+    "education",
+    "webgl",
+    "react",
+    "nodejs"
   ],
   "author": "Youssef",
   "license": "PRIVATE",
