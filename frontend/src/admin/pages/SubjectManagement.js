@@ -290,7 +290,7 @@ function SubjectManagement() {
   const { getRootProps: getHeaderProps, getInputProps: getHeaderInputProps, isDragActive: isHeaderDragActive } = useDropzone({
     onDrop: onDropHeader,
     onDropRejected: onDropHeaderRejected,
-    accept: 'image/jpeg,image/png,image/webp,.jpeg,.jpg,.png,.webp',
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     multiple: false,
     maxSize: MAX_HEADER_SIZE_BYTES,
   });
