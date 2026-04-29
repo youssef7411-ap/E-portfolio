@@ -15,7 +15,6 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import LibraryBookshelf from '../components/LibraryBookshelf';
-import TransitionWrapper from '../components/TransitionWrapper';
 import { fetchPortfolioData } from '../store/slices/portfolioSlice';
 import '../styles/Home.css';
 
@@ -349,9 +348,8 @@ function Home() {
 
   return (
     <div className="home">
-      <TransitionWrapper onTransitionComplete={() => {}}>
-        <div className="main-layout is-visible">
-          <motion.header 
+      <div className="main-layout is-visible">
+        <motion.header 
             className="portfolio-header"
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -449,7 +447,6 @@ function Home() {
           </motion.footer>
         </main>
       </div>
-      </TransitionWrapper>
     </div>
   );
 }

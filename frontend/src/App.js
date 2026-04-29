@@ -5,6 +5,7 @@ import PrivateRoute from './components/PrivateRoute';
 import Footer from './components/Footer';
 import AdminCrashGuard from './components/AdminCrashGuard';
 import ScrollToTop from './components/ScrollToTop';
+import BrainIdeaLoader from './components/BrainIdeaLoader';
 import { motion } from 'framer-motion';
 import './styles/App.css';
 import { API_URL } from './config/api';
@@ -137,10 +138,6 @@ const fetchJsonWithTimeout = async (url, timeoutMs = 3000, extraHeaders = {}) =>
 function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
   const location = useLocation();
   const [bootPhase, setBootPhase] = useState('zoom-in');
-  const [preloadProgress, setPreloadProgress] = useState({ loaded: 0, total: 0 });
-  const preloadPercent = preloadProgress.total > 0
-    ? Math.min(100, Math.round((preloadProgress.loaded / preloadProgress.total) * 100))
-    : 0;
 
   useEffect(() => {
     let isActive = true;
@@ -159,14 +156,9 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
       try {
         console.log("Starting asset preloads...");
         await Promise.allSettled([
-          wait(800), // Reduced from 2500 to allow IntroAnimation to take over sooner
+          wait(800),
           warmRouteChunks(),
-          preloadPublicGraphics((progress) => {
-            if (isActive) {
-              setPreloadProgress(progress);
-              console.log(`Preload progress: ${progress.loaded}/${progress.total}`);
-            }
-          }),
+          preloadPublicGraphics(),
         ]);
         console.log("Preloads settled.");
       } catch (err) {
@@ -300,35 +292,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
 
    if (bootPhase !== 'done') {
      return (
-       <div
-         className={[
-           'app-boot',
-           bootPhase === 'out' ? 'boot-out' : `boot-phase-${bootPhase}`,
-         ].filter(Boolean).join(' ')}
-         aria-label="Loading"
-       >
-         <div className="boot-shell">
-           <div className="boot-terminal-icon" />
-           
-           <div className="boot-status-container">
-             <div className="boot-status-text">
-               <span>Youssef's Portfolio...</span>
-               <span>{preloadPercent}%</span>
-             </div>
-             <div className="boot-status-bar">
-               <div 
-                 className="boot-status-fill" 
-                 style={{ width: `${preloadPercent}%` }} 
-               />
-             </div>
-             <div className="boot-status-text" style={{ fontSize: '9px', opacity: 0.6 }}>
-               {preloadProgress.total > 0
-                 ? `Fetching assets: ${preloadProgress.loaded}/${preloadProgress.total}`
-                 : 'Establishing connection...'}
-             </div>
-           </div>
-         </div>
-       </div>
+       <BrainIdeaLoader onComplete={() => {}} />
      );
    }
 
