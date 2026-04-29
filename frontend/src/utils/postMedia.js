@@ -8,6 +8,10 @@ export const normalizeLinks = (links) => {
 export const filenameFromUrl = (rawUrl, fallback) => {
   const url = String(rawUrl || '').trim();
   if (!url) return fallback;
+  if (!/^https?:\/\//i.test(url)) {
+    const last = url.split('?')[0].split('#')[0].split('/').pop() || '';
+    return last || fallback;
+  }
   try {
     const u = new URL(url);
     const last = (u.pathname || '').split('/').filter(Boolean).pop() || '';

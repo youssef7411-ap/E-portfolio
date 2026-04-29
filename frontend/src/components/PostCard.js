@@ -63,8 +63,9 @@ function isCloudinaryUrl(value) {
 
 function rewriteLocalhostUploadUrl(value) {
   if (!API_URL) return null;
+  if (!value || typeof value !== 'string') return null;
   try {
-    const u = new URL(String(value));
+    const u = new URL(value.trim());
     const isLocal = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
     if (!isLocal) return null;
     if (!u.pathname.startsWith('/uploads/')) return null;
