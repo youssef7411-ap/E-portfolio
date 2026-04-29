@@ -453,11 +453,11 @@ export default function PostManagement() {
   };
 
   const addLink = ({ title, url }) => {
-    const normalized = normalizeLinkUrl(url);
-    if (!normalized) {
-      window.alert('Please enter a valid website link.');
-      return;
-    }
+  const normalized = normalizeLinkUrl(url);
+  if (!normalized || !url || typeof url !== 'string') {
+    window.alert('Please enter a valid website link.');
+    return;
+  }
     setFormData(prev => ({
       ...prev,
       links: [...(Array.isArray(prev.links) ? prev.links : []), { title: String(title || '').trim(), url: normalized }],
