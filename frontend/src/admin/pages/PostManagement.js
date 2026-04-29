@@ -443,6 +443,7 @@ export default function PostManagement() {
     const raw = String(value || '').trim();
     if (!raw) return '';
     const withProto = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw) ? raw : `https://${raw}`;
+    if (!withProto) return '';
     try {
       const u = new URL(withProto);
       if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
