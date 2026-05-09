@@ -214,8 +214,47 @@
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  gap: 2rem;
   z-index: 100;
+}
+
+.dots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.scroll-nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.scroll-nav-btn:hover:not(:disabled) {
+  background: #60a5fa;
+  border-color: #60a5fa;
+  transform: scale(1.1);
+}
+
+.scroll-nav-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.scroll-nav-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .pagination-dot {

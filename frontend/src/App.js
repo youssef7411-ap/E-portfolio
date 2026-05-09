@@ -296,7 +296,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
      );
    }
 
-   return (
+  return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -330,7 +330,7 @@ function AppBody({ darkMode, setDarkMode, setIsAdmin }) {
          <Footer darkMode={darkMode} isAdminRoute={location.pathname.startsWith('/admin')} />
        )}
        <ScrollToTop />
-      </motion.div>
+    </motion.div>
   );
 }
 

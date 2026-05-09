@@ -253,13 +253,37 @@ const SubjectGallery = ({ subjects, meta }) => {
 
         {/* Vertical Pagination Dots */}
         <div className="gallery-pagination">
-          {subjects.map((_, i) => (
-            <div 
-              key={i} 
-              className={`pagination-dot ${i === activeIndex ? 'active' : ''}`}
-              onClick={() => setActiveIndex(i)}
-            />
-          ))}
+          <button 
+            className="scroll-nav-btn up"
+            onClick={() => setActiveIndex(prev => Math.max(0, prev - 1))}
+            disabled={activeIndex === 0}
+            aria-label="Previous Subject"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+          </button>
+
+          <div className="dots-container">
+            {subjects.map((_, i) => (
+              <div 
+                key={i} 
+                className={`pagination-dot ${i === activeIndex ? 'active' : ''}`}
+                onClick={() => setActiveIndex(i)}
+              />
+            ))}
+          </div>
+
+          <button 
+            className="scroll-nav-btn down"
+            onClick={() => setActiveIndex(prev => Math.min(subjects.length - 1, prev + 1))}
+            disabled={activeIndex === subjects.length - 1}
+            aria-label="Next Subject"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
         </div>
 
         {/* Compact Floating Footer */}
